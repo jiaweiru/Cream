@@ -213,24 +213,47 @@ def analyze_duration(
         console.print(f"[blue]Statistics saved to {output}[/blue]")
 
 
-@app.command("enhance")
-def enhance_audio(
+@app.command("separate")
+def separate_audio(
     input_dir: Path = typer.Argument(..., help="Input directory containing audio files"),
-    output_dir: Path = typer.Argument(..., help="Output directory for enhanced audio"),
-    method: str = typer.Option("uvr", "--method", "-m", help="Enhancement method: uvr or deep-filter-net"),
+    output_dir: Path = typer.Argument(..., help="Output directory for separated audio"),
+    method: str = typer.Option("uvr", "--method", "-m", help="Separation method: uvr, spleeter, or htdemucs"),
     overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing files")
 ):
-    """Perform audio enhancement and source separation using acoustic frontend."""
-    from cream.audio.analysis.acoustic_frontend import AcousticFrontend
+    """Perform audio source separation using acoustic frontend."""
+    from cream.audio.analysis.acoustic_frontend import AudioSeparator
     
-    console.print(f"[green]Performing audio enhancement using {method} method[/green]")
+    console.print(f"[green]Performing audio separation using {method} method[/green]")
     
-    frontend = AcousticFrontend()
+    separator = AudioSeparator()
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console
     ) as progress:
         task = progress.add_task("Processing files...", total=None)
-        frontend.separate_directory(input_dir, output_dir, method, overwrite)
+        separator.separate_directory(input_dir, output_dir, method, overwrite)
+        progress.update(task, description="✅ Separation completed")
+
+
+@app.command("enhance")
+def enhance_audio(
+    input_dir: Path = typer.Argument(..., help="Input directory containing audio files"),
+    output_dir: Path = typer.Argument(..., help="Output directory for enhanced audio"),
+    method: str = typer.Option("deep-filter-net", "--method", "-m", help="Enhancement method: deep-filter-net, speechenhancement, or rnnoise"),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing files")
+):
+    """Perform audio enhancement and noise reduction using acoustic frontend."""
+    from cream.audio.analysis.acoustic_frontend import AudioEnhancer
+    
+    console.print(f"[green]Performing audio enhancement using {method} method[/green]")
+    
+    enhancer = AudioEnhancer()
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console
+    ) as progress:
+        task = progress.add_task("Processing files...", total=None)
+        enhancer.enhance_directory(input_dir, output_dir, method, overwrite)
         progress.update(task, description="✅ Enhancement completed")

@@ -8,56 +8,83 @@ from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError, InvalidFormatError, ModelNotAvailableError
 
 
-class AcousticFrontend:
-    """Acoustic frontend processor for separation and enhancement."""
+class AudioSeparator:
+    """Audio source separation processor."""
     
     def __init__(self, max_workers: int | None = None):
         self.max_workers = max_workers or config.max_workers
     
     def separate_file(self, input_path: Path, output_dir: Path, 
                      method: str, overwrite: bool = False) -> list[Path]:
-        """Separate a single audio file."""
+        """Separate a single audio file using specified method."""
         if not config.is_audio_file(input_path):
             raise InvalidFormatError(f"Unsupported audio format: {input_path.suffix}")
         
         output_dir.mkdir(parents=True, exist_ok=True)
         
         try:
-            # Placeholder for actual separation implementation
             if method == "uvr":
-                print(f"UVR separating {input_path}")
-                # Mock UVR separation (vocals, accompaniment)
-                outputs = []
-                base_name = input_path.stem
-                
-                for component in ["vocals", "accompaniment"]:
-                    output_name = f"{base_name}_{component}{input_path.suffix}"
-                    output_path = output_dir / output_name
-                    
-                    if not output_path.exists() or overwrite:
-                        # In real implementation, this would create actual separated audio
-                        output_path.touch()
-                        outputs.append(output_path)
-                
-                return outputs
-                
-            elif method == "deep-filter-net":
-                print(f"Deep Filter Net enhancing {input_path}")
-                # Mock noise reduction
-                base_name = input_path.stem
-                output_name = f"{base_name}_enhanced{input_path.suffix}"
-                output_path = output_dir / output_name
-                
-                if not output_path.exists() or overwrite:
-                    output_path.touch()
-                    return [output_path]
-                return []
-            
+                return self._separate_with_uvr(input_path, output_dir, overwrite)
+            elif method == "spleeter":
+                return self._separate_with_spleeter(input_path, output_dir, overwrite)
+            elif method == "htdemucs":
+                return self._separate_with_htdemucs(input_path, output_dir, overwrite)
             else:
                 raise AudioProcessingError(f"Unknown separation method: {method}")
                 
         except Exception as e:
             raise AudioProcessingError(f"Failed to separate {input_path}: {str(e)}")
+    
+    def _separate_with_uvr(self, input_path: Path, output_dir: Path, overwrite: bool) -> list[Path]:
+        """Separate using UVR model."""
+        print(f"UVR separating {input_path}")
+        outputs = []
+        base_name = input_path.stem
+        
+        for component in ["vocals", "accompaniment"]:
+            output_name = f"{base_name}_{component}{input_path.suffix}"
+            output_path = output_dir / output_name
+            
+            if not output_path.exists() or overwrite:
+                # TODO: Implement actual UVR model inference
+                output_path.touch()
+                outputs.append(output_path)
+        
+        return outputs
+    
+    def _separate_with_spleeter(self, input_path: Path, output_dir: Path, overwrite: bool) -> list[Path]:
+        """Separate using Spleeter model."""
+        print(f"Spleeter separating {input_path}")
+        outputs = []
+        base_name = input_path.stem
+        
+        for component in ["vocals", "drums", "bass", "other"]:
+            output_name = f"{base_name}_{component}{input_path.suffix}"
+            output_path = output_dir / output_name
+            
+            if not output_path.exists() or overwrite:
+                # TODO: Implement actual Spleeter model inference
+                output_path.touch()
+                outputs.append(output_path)
+        
+        return outputs
+    
+    def _separate_with_htdemucs(self, input_path: Path, output_dir: Path, overwrite: bool) -> list[Path]:
+        """Separate using HT-Demucs model."""
+        print(f"HT-Demucs separating {input_path}")
+        outputs = []
+        base_name = input_path.stem
+        
+        for component in ["vocals", "drums", "bass", "other"]:
+            output_name = f"{base_name}_{component}{input_path.suffix}"
+            output_path = output_dir / output_name
+            
+            if not output_path.exists() or overwrite:
+                # TODO: Implement actual HT-Demucs model inference
+                output_path.touch()
+                outputs.append(output_path)
+        
+        return outputs
     
     def separate_directory(self, input_dir: Path, output_dir: Path, 
                           method: str, overwrite: bool = False) -> dict[str, list[Path]]:
@@ -90,10 +117,17 @@ class AcousticFrontend:
                 results[file_name] = separated_files
         
         return results
+
+
+class AudioEnhancer:
+    """Audio enhancement and noise reduction processor."""
     
-    def enhance_audio(self, input_path: Path, output_path: Path, 
+    def __init__(self, max_workers: int | None = None):
+        self.max_workers = max_workers or config.max_workers
+    
+    def enhance_file(self, input_path: Path, output_path: Path, 
                      method: str = "deep-filter-net", overwrite: bool = False) -> bool:
-        """Enhance a single audio file (noise reduction)."""
+        """Enhance a single audio file using specified method."""
         if not config.is_audio_file(input_path):
             raise InvalidFormatError(f"Unsupported audio format: {input_path.suffix}")
         
@@ -103,27 +137,64 @@ class AcousticFrontend:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         try:
-            print(f"Enhancing {input_path} using {method}")
-            
-            # In real implementation, this would apply noise reduction/enhancement
-            import shutil
-            shutil.copy2(input_path, output_path)
-            
-            return True
+            if method == "deep-filter-net":
+                return self._enhance_with_deep_filter_net(input_path, output_path)
+            elif method == "speechenhancement":
+                return self._enhance_with_speech_enhancement(input_path, output_path)
+            elif method == "rnnoise":
+                return self._enhance_with_rnnoise(input_path, output_path)
+            else:
+                raise AudioProcessingError(f"Unknown enhancement method: {method}")
             
         except Exception as e:
             raise AudioProcessingError(f"Failed to enhance {input_path}: {str(e)}")
     
-    def batch_enhance(self, audio_files: list[Path], output_dir: Path, 
-                     method: str = "deep-filter-net", overwrite: bool = False) -> list[Path]:
-        """Enhance multiple audio files."""
+    def _enhance_with_deep_filter_net(self, input_path: Path, output_path: Path) -> bool:
+        """Enhance using Deep Filter Net model."""
+        print(f"Deep Filter Net enhancing {input_path}")
+        # TODO: Implement actual Deep Filter Net model inference
+        import shutil
+        shutil.copy2(input_path, output_path)
+        return True
+    
+    def _enhance_with_speech_enhancement(self, input_path: Path, output_path: Path) -> bool:
+        """Enhance using Speech Enhancement model."""
+        print(f"Speech Enhancement processing {input_path}")
+        # TODO: Implement actual Speech Enhancement model inference
+        import shutil
+        shutil.copy2(input_path, output_path)
+        return True
+    
+    def _enhance_with_rnnoise(self, input_path: Path, output_path: Path) -> bool:
+        """Enhance using RNNoise model."""
+        print(f"RNNoise processing {input_path}")
+        # TODO: Implement actual RNNoise model inference
+        import shutil
+        shutil.copy2(input_path, output_path)
+        return True
+    
+    def enhance_directory(self, input_dir: Path, output_dir: Path, 
+                         method: str = "deep-filter-net", overwrite: bool = False) -> list[Path]:
+        """Enhance all audio files in directory."""
+        if not input_dir.exists():
+            raise FileNotFoundError(f"Input directory not found: {input_dir}")
+        
+        audio_files = []
+        for path in input_dir.rglob("*"):
+            if path.is_file() and config.is_audio_file(path):
+                audio_files.append(path)
+        
+        if not audio_files:
+            raise AudioProcessingError(f"No audio files found in {input_dir}")
+        
         enhanced_files = []
         
         def process_file(audio_file):
-            output_name = f"{audio_file.stem}_enhanced{audio_file.suffix}"
-            output_path = output_dir / output_name
+            relative_path = audio_file.relative_to(input_dir)
+            output_name = f"{relative_path.stem}_enhanced{relative_path.suffix}"
+            output_path = output_dir / relative_path.parent / output_name
             
-            if self.enhance_audio(audio_file, output_path, method, overwrite):
+            if self.enhance_file(audio_file, output_path, method, overwrite):
                 return output_path
             return None
         
@@ -136,3 +207,5 @@ class AcousticFrontend:
                     enhanced_files.append(result)
         
         return enhanced_files
+
+
