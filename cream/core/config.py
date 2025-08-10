@@ -13,7 +13,7 @@ class Config:
         self.config_dir.mkdir(exist_ok=True)
         
         # Default configurations
-        self.audio_formats = [".wav", ".mp3", ".flac", ".m4a", ".ogg"]
+        self.audio_formats = [".wav", ".flac", ".mp3", ".ogg", ".opus", ".m4a", ".aiff", ".ac3"]
         self.text_formats = [".txt", ".json", ".csv"]
         
         # Model configurations (placeholders for future use)
