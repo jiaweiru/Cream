@@ -1,4 +1,32 @@
-"""Speech intelligibility evaluation functionality."""
+"""Speech intelligibility evaluation functionality for the cream package.
+
+This module provides comprehensive speech intelligibility evaluation using
+Automatic Speech Recognition (ASR) models. It supports transcription-based
+intelligibility assessment with optional reference text comparison for
+Word Error Rate (WER) calculation.
+
+The module supports various ASR models including Paraformer and Whisper,
+and provides detailed intelligibility metrics with confidence scores.
+
+Example:
+    Basic usage for intelligibility evaluation:
+    
+    >>> from pathlib import Path
+    >>> from cream.audio.analysis.intelligibility import IntelligibilityEvaluator
+    >>> 
+    >>> evaluator = IntelligibilityEvaluator(max_workers=4)
+    >>> 
+    >>> # Single file evaluation
+    >>> result = evaluator.evaluate_file(
+    ...     Path("speech.wav"),
+    ...     reference_text="Hello world",
+    ...     model="whisper"
+    ... )
+    >>> print(f"Intelligibility score: {result['intelligibility_score']}")
+
+Classes:
+    IntelligibilityEvaluator: Main class for speech intelligibility evaluation.
+"""
 
 from pathlib import Path
 import concurrent.futures
@@ -6,27 +34,56 @@ from concurrent.futures import ThreadPoolExecutor
 
 from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError, InvalidFormatError, ModelNotAvailableError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class IntelligibilityEvaluator:
-    """Speech intelligibility evaluator using ASR models."""
+    """Speech intelligibility evaluator using ASR models.
     
-    def __init__(self, max_workers: int | None = None):
+    This class provides methods for evaluating speech intelligibility using
+    various ASR models. It supports transcription-based evaluation with optional
+    reference text comparison for WER calculation. The evaluator includes
+    multi-threaded processing for batch operations.
+    
+    Attributes:
+        max_workers (int): Maximum number of worker threads for parallel processing.
+    
+    Example:
+        Creating and using an intelligibility evaluator:
+        
+        >>> evaluator = IntelligibilityEvaluator(max_workers=4)
+        >>> result = evaluator.evaluate_file(
+        ...     Path("recording.wav"),
+        ...     reference_text="This is a test",
+        ...     model="paraformer"
+        ... )
+    """
+    
+    def __init__(self, max_workers: int | None = None) -> None:
+        """Initialize the intelligibility evaluator.
+        
+        Args:
+            max_workers: Maximum number of worker threads for parallel processing.
+        """
         self.max_workers = max_workers or config.max_workers
     
     def evaluate_file(self, audio_path: Path, reference_text: str | None, model: str) -> dict[str, str | float | int]:
         """Evaluate speech intelligibility for a single audio file."""
         if not config.is_audio_file(audio_path):
+            logger.error(f"Unsupported audio format for intelligibility evaluation: {audio_path.suffix}")
             raise InvalidFormatError(f"Unsupported audio format: {audio_path.suffix}")
         
         model_config = config.get_model_config("asr", model)
         if not model_config.get("enabled", False):
+            logger.error(f"ASR model {model} is not available")
             raise ModelNotAvailableError(f"ASR model {model} is not available")
         
         try:
             # Placeholder for actual intelligibility evaluation
             # In real implementation, this would use Paraformer, Whisper, etc.
-            print(f"Evaluating intelligibility for {audio_path} using {model}")
+            logger.info(f"Evaluating intelligibility for {audio_path} using {model}")
             
             # Mock intelligibility results
             import random
@@ -53,11 +110,13 @@ class IntelligibilityEvaluator:
             return result
             
         except Exception as e:
+            logger.exception(f"Failed to evaluate intelligibility for {audio_path}")
             raise AudioProcessingError(f"Failed to evaluate intelligibility for {audio_path}: {str(e)}")
     
     def load_reference_text(self, reference_file: Path) -> dict[str, str]:
         """Load reference text from file."""
         if not reference_file.exists():
+            logger.error(f"Reference file not found: {reference_file}")
             raise FileNotFoundError(f"Reference file not found: {reference_file}")
         
         references = {}
@@ -78,6 +137,7 @@ class IntelligibilityEvaluator:
             return references
             
         except Exception as e:
+            logger.exception("Failed to load reference text")
             raise AudioProcessingError(f"Failed to load reference text: {str(e)}")
     
     def evaluate_directory(self, input_dir: Path, reference_file: Path | None, model: str) -> dict[str, dict[str, str | float | int]]:

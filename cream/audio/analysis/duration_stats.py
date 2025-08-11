@@ -6,6 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError, InvalidFormatError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class DurationAnalyzer:
@@ -17,12 +20,13 @@ class DurationAnalyzer:
     def get_duration(self, audio_path: Path) -> float:
         """Get duration of an audio file in seconds."""
         if not config.is_audio_file(audio_path):
+            logger.error(f"Unsupported audio format for duration analysis: {audio_path.suffix}")
             raise InvalidFormatError(f"Unsupported audio format: {audio_path.suffix}")
         
         try:
             # Placeholder for actual duration extraction
             # In real implementation, this would use librosa, pydub, or ffprobe
-            print(f"Getting duration for {audio_path}")
+            logger.info(f"Getting duration for {audio_path}")
             
             # Mock duration based on file size (very rough approximation)
             import random
@@ -32,11 +36,13 @@ class DurationAnalyzer:
             return round(mock_duration, 2)
             
         except Exception as e:
+            logger.exception(f"Failed to get duration for {audio_path}")
             raise AudioProcessingError(f"Failed to get duration for {audio_path}: {str(e)}")
     
     def analyze_directory(self, input_dir: Path) -> dict[str, float | int | dict]:
         """Analyze duration statistics for all audio files in directory."""
         if not input_dir.exists():
+            logger.error(f"Input directory not found for duration analysis: {input_dir}")
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
         
         audio_files = []
@@ -45,6 +51,7 @@ class DurationAnalyzer:
                 audio_files.append(path)
         
         if not audio_files:
+            logger.error(f"No audio files found for duration analysis in {input_dir}")
             raise AudioProcessingError(f"No audio files found in {input_dir}")
         
         # Get durations

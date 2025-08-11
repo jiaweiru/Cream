@@ -1,4 +1,36 @@
-"""Progress bar utilities using rich library."""
+"""Progress bar utilities using the rich library for the cream package.
+
+This module provides pre-configured progress bar components for different types
+of operations in the cream package. It uses the rich library to create visually
+appealing and informative progress indicators.
+
+The module offers specialized progress bars for:
+- File operations (copying, sampling, etc.)
+- Audio processing (resampling, segmentation, etc.)
+- Analysis operations (MOS evaluation, similarity analysis, etc.)
+
+Example:
+    Basic usage of progress bars:
+    
+    >>> from cream.utils.progress import create_file_progress
+    >>> 
+    >>> with create_file_progress() as progress:
+    ...     task = progress.add_task("Processing files...", total=100)
+    ...     for i in range(100):
+    ...         # Do some file operation
+    ...         progress.update(task, advance=1)
+    >>> 
+    >>> # For audio processing
+    >>> from cream.utils.progress import create_audio_progress
+    >>> with create_audio_progress() as progress:
+    ...     task = progress.add_task("Resampling audio...", total=50)
+    ...     # Process audio files...
+
+Functions:
+    create_file_progress: Create progress bar for file operations.
+    create_audio_progress: Create progress bar for audio processing.
+    create_analysis_progress: Create progress bar for analysis operations.
+"""
 
 from rich.progress import (
     Progress, 
@@ -13,81 +45,34 @@ from rich.progress import (
 from rich.console import Console
 
 
-class ProgressManager:
-    """Rich progress bar manager for various operations."""
-    
-    def __init__(self, console: Console | None = None):
-        self.console = console or Console()
-    
-    def create_basic_progress(self) -> Progress:
-        """Create a basic progress bar."""
-        return Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TaskProgressColumn(),
-            console=self.console
-        )
-    
-    def create_detailed_progress(self) -> Progress:
-        """Create a detailed progress bar with time estimates."""
-        return Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            MofNCompleteColumn(),
-            TaskProgressColumn(),
-            TimeElapsedColumn(),
-            TimeRemainingColumn(),
-            console=self.console
-        )
-    
-    def create_simple_spinner(self) -> Progress:
-        """Create a simple spinner for indeterminate progress."""
-        return Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=self.console
-        )
-    
-    def track_iterable(self, iterable: list, description: str = "Processing...",
-                      total: int | None = None):
-        """Track progress of an iterable with rich progress bar."""
-        with self.create_detailed_progress() as progress:
-            task = progress.add_task(description, total=total or len(iterable))
-            
-            for item in iterable:
-                yield item
-                progress.advance(task)
-    
-    def track_function(self, func: callable, items: list, description: str = "Processing...",
-                      *args, **kwargs) -> list:
-        """Track progress of a function applied to a list of items."""
-        results = []
-        
-        with self.create_detailed_progress() as progress:
-            task = progress.add_task(description, total=len(items))
-            
-            for item in items:
-                result = func(item, *args, **kwargs)
-                results.append(result)
-                progress.advance(task)
-        
-        return results
-    
-    def show_status(self, message: str, spinner_style: str = "dots") -> None:
-        """Show a status message with spinner."""
-        with Progress(
-            SpinnerColumn(spinner_style),
-            TextColumn(f"[green]{message}[/green]"),
-            console=self.console
-        ) as progress:
-            progress.add_task("", total=None)
-            # This will show the spinner until the context exits
 
 
 def create_file_progress() -> Progress:
-    """Create a progress bar suitable for file operations."""
+    """Create a progress bar optimized for file operations.
+    
+    Creates a rich Progress instance with components suitable for file
+    operations such as copying, sampling, and directory processing.
+    Includes spinner, task description, progress bar, file counts, and timing.
+    
+    Returns:
+        Progress instance configured for file operations with:
+        - Spinner animation
+        - Task description in bold blue
+        - Progress bar
+        - "M of N" completion counter
+        - Percentage complete
+        - Time elapsed
+        
+    Example:
+        Using the file progress bar:
+        
+        >>> progress = create_file_progress()
+        >>> with progress:
+        ...     task = progress.add_task("Copying files", total=1000)
+        ...     for i in range(1000):
+        ...         # Copy file operation here
+        ...         progress.update(task, advance=1)
+    """
     return Progress(
         SpinnerColumn(),
         TextColumn("[bold blue]{task.description}"),
@@ -100,7 +85,31 @@ def create_file_progress() -> Progress:
 
 
 def create_audio_progress() -> Progress:
-    """Create a progress bar suitable for audio processing."""
+    """Create a progress bar optimized for audio processing operations.
+    
+    Creates a rich Progress instance with components suitable for audio
+    processing tasks such as resampling, segmentation, and normalization.
+    Uses audio-themed styling and includes time remaining estimates.
+    
+    Returns:
+        Progress instance configured for audio processing with:
+        - Audio-themed spinner animation
+        - Task description in bold green
+        - Green-styled progress bar
+        - "M of N" completion counter
+        - Percentage complete
+        - Time remaining estimate
+        
+    Example:
+        Using the audio progress bar:
+        
+        >>> progress = create_audio_progress()
+        >>> with progress:
+        ...     task = progress.add_task("Resampling audio files", total=50)
+        ...     for audio_file in audio_files:
+        ...         # Resample audio file here
+        ...         progress.update(task, advance=1)
+    """
     return Progress(
         SpinnerColumn("audio", speed=0.8),
         TextColumn("[bold green]{task.description}"),
@@ -113,7 +122,30 @@ def create_audio_progress() -> Progress:
 
 
 def create_analysis_progress() -> Progress:
-    """Create a progress bar suitable for analysis operations."""
+    """Create a progress bar optimized for analysis and evaluation operations.
+    
+    Creates a rich Progress instance with components suitable for analysis
+    tasks such as MOS evaluation, similarity analysis, and statistical
+    computations. Uses analysis-themed styling without time estimates.
+    
+    Returns:
+        Progress instance configured for analysis operations with:
+        - Dots spinner animation
+        - Task description in bold yellow
+        - Yellow-styled progress bar
+        - Percentage complete
+        - Time elapsed
+        
+    Example:
+        Using the analysis progress bar:
+        
+        >>> progress = create_analysis_progress()
+        >>> with progress:
+        ...     task = progress.add_task("Computing MOS scores", total=200)
+        ...     for audio_file in audio_files:
+        ...         # Compute MOS score here
+        ...         progress.update(task, advance=1)
+    """
     return Progress(
         SpinnerColumn("dots", speed=1.0),
         TextColumn("[bold yellow]{task.description}"),

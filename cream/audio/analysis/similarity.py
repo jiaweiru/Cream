@@ -6,6 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError, InvalidFormatError, ModelNotAvailableError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class SpeakerAnalyzer:
@@ -17,16 +20,18 @@ class SpeakerAnalyzer:
     def extract_embedding(self, audio_path: Path) -> list[float]:
         """Extract speaker embedding from audio file."""
         if not config.is_audio_file(audio_path):
+            logger.error(f"Unsupported audio format for speaker analysis: {audio_path.suffix}")
             raise InvalidFormatError(f"Unsupported audio format: {audio_path.suffix}")
         
         model_config = config.get_model_config("speaker", "3d-speaker")
         if not model_config.get("enabled", False):
+            logger.error("3D-Speaker model is not available")
             raise ModelNotAvailableError("3D-Speaker model is not available")
         
         try:
             # Placeholder for actual speaker embedding extraction
             # In real implementation, this would use 3D-Speaker library
-            print(f"Extracting speaker embedding for {audio_path}")
+            logger.info(f"Extracting speaker embedding for {audio_path}")
             
             # Mock embedding vector (256-dimensional)
             import random
@@ -36,6 +41,7 @@ class SpeakerAnalyzer:
             return embedding
             
         except Exception as e:
+            logger.exception(f"Failed to extract embedding for {audio_path}")
             raise AudioProcessingError(f"Failed to extract embedding for {audio_path}: {str(e)}")
     
     def calculate_similarity(self, embedding1: list[float], embedding2: list[float]) -> float:
@@ -53,6 +59,7 @@ class SpeakerAnalyzer:
             return max(-1.0, min(1.0, similarity))  # Clamp to [-1, 1]
             
         except Exception as e:
+            logger.exception("Failed to calculate similarity")
             raise AudioProcessingError(f"Failed to calculate similarity: {str(e)}")
     
     def cluster_speakers(self, embeddings: dict[str, list[float]], 
@@ -91,11 +98,13 @@ class SpeakerAnalyzer:
             return clusters
             
         except Exception as e:
+            logger.exception("Failed to cluster speakers")
             raise AudioProcessingError(f"Failed to cluster speakers: {str(e)}")
     
     def analyze_directory(self, input_dir: Path, cluster: bool = False) -> dict[str, int | dict[str, list[float]] | dict[str, int] | dict[str, dict[str, list[str] | int]]]:
         """Analyze speaker similarity for all audio files in directory."""
         if not input_dir.exists():
+            logger.error(f"Input directory not found for speaker analysis: {input_dir}")
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
         
         audio_files = []
@@ -104,6 +113,7 @@ class SpeakerAnalyzer:
                 audio_files.append(path)
         
         if not audio_files:
+            logger.error(f"No audio files found for speaker analysis in {input_dir}")
             raise AudioProcessingError(f"No audio files found in {input_dir}")
         
         # Extract embeddings

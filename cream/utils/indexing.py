@@ -6,6 +6,9 @@ import json
 
 from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError, ValidationError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class IndexMatcher:
@@ -20,6 +23,7 @@ class IndexMatcher:
             try:
                 self.compiled_patterns[pattern] = re.compile(pattern)
             except re.error as e:
+                logger.exception(f"Invalid regex pattern '{pattern}': {str(e)}")
                 raise ValidationError(f"Invalid regex pattern '{pattern}': {str(e)}")
         
         return self.compiled_patterns[pattern]
@@ -89,7 +93,7 @@ class IndexMatcher:
                     indices[f"{source.name}_filename"] = filename_indices
                     
             except Exception as e:
-                print(f"Failed to load indices from {source}: {str(e)}")
+                logger.exception(f"Failed to load indices from {source}")
         
         elif source.is_dir():
             # Extract from all files in directory
@@ -117,7 +121,7 @@ class IndexMatcher:
                                 continue
                                 
                     except Exception as e:
-                        print(f"Failed to process {file_path}: {str(e)}")
+                        logger.exception(f"Failed to process {file_path}")
                         continue
         
         return indices
@@ -204,8 +208,10 @@ class IndexMatcher:
                      match_type: str = "exact") -> list[dict[str, str | float]]:
         """Main method to match indices between source and target."""
         if not source.exists():
+            logger.error(f"Source not found: {source}")
             raise FileNotFoundError(f"Source not found: {source}")
         if not target.exists():
+            logger.error(f"Target not found: {target}")
             raise FileNotFoundError(f"Target not found: {target}")
         
         try:
@@ -214,8 +220,10 @@ class IndexMatcher:
             target_indices = self.load_target_indices(target, pattern)
             
             if not source_indices:
+                logger.error(f"No indices found in source using pattern: {pattern}")
                 raise AudioProcessingError(f"No indices found in source using pattern: {pattern}")
             if not target_indices:
+                logger.error(f"No indices found in target using pattern: {pattern}")
                 raise AudioProcessingError(f"No indices found in target using pattern: {pattern}")
             
             # Find matches
@@ -224,6 +232,7 @@ class IndexMatcher:
             return matches
             
         except Exception as e:
+            logger.exception("Failed to match indices")
             raise AudioProcessingError(f"Failed to match indices: {str(e)}")
     
     def generate_mapping_file(self, matches: list[dict[str, str | float]], 

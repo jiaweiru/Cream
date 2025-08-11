@@ -8,6 +8,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class FileSampler:
@@ -22,6 +25,7 @@ class FileSampler:
                           recursive: bool = True) -> list[Path]:
         """Get all files matching pattern in directory."""
         if not input_dir.exists():
+            logger.error(f"Input directory not found for file operations: {input_dir}")
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
         
         if recursive:
@@ -51,7 +55,7 @@ class FileSampler:
             return True
             
         except Exception as e:
-            print(f"Failed to copy {src} to {dst}: {str(e)}")
+            logger.exception(f"Failed to copy {src} to {dst}")
             return False
     
     def sample_directory(self, input_dir: Path, output_dir: Path, 
@@ -59,12 +63,14 @@ class FileSampler:
                         preserve_structure: bool = False) -> list[Path]:
         """Sample files from input directory and copy to output directory."""
         if not input_dir.exists():
+            logger.error(f"Input directory not found for file operations: {input_dir}")
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
         
         # Get all matching files
         all_files = self.get_matching_files(input_dir, pattern)
         
         if not all_files:
+            logger.error(f"No files found matching pattern {pattern} in {input_dir}")
             raise AudioProcessingError(f"No files found matching pattern {pattern} in {input_dir}")
         
         # Sample the specified number of files
@@ -109,6 +115,7 @@ class FileSampler:
                          count_per_subdir: int, pattern: str = "*") -> dict[str, list[Path]]:
         """Sample files from each subdirectory separately."""
         if not input_dir.exists():
+            logger.error(f"Input directory not found for file operations: {input_dir}")
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
         
         results = {}
@@ -128,7 +135,7 @@ class FileSampler:
                 sampled = self.sample_directory(subdir, subdir_output, count_per_subdir, pattern, preserve_structure=True)
                 results[subdir.name] = sampled
             except Exception as e:
-                print(f"Failed to sample from {subdir}: {str(e)}")
+                logger.exception(f"Failed to sample from {subdir}")
                 continue
         
         return results

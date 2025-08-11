@@ -10,7 +10,7 @@ from .analysis.mos import MOSEvaluator
 from .analysis.intelligibility import IntelligibilityEvaluator
 from .analysis.similarity import SpeakerAnalyzer
 from .analysis.duration_stats import DurationAnalyzer
-from .analysis.acoustic_frontend import AcousticFrontend
+from .analysis.acoustic_frontend import AudioSeparator, AudioEnhancer
 
 __all__ = [
     # Processing
@@ -23,5 +23,6 @@ __all__ = [
     "IntelligibilityEvaluator", 
     "SpeakerAnalyzer",
     "DurationAnalyzer",
-    "AcousticFrontend"
+    "AudioSeparator",
+    "AudioEnhancer",
 ]

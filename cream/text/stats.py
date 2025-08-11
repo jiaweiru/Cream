@@ -1,21 +1,106 @@
-"""Text statistics analysis functionality."""
+"""Text statistics analysis functionality for the cream package.
+
+This module provides comprehensive text analysis capabilities including length
+distribution analysis, word count statistics, and file comparison utilities.
+It supports various text formats including plain text, JSON, and CSV files.
+
+The analyzer calculates detailed statistics such as character counts, word counts,
+percentiles, and distribution patterns for text datasets.
+
+Example:
+    Basic usage for text statistics analysis:
+    
+    >>> from pathlib import Path
+    >>> from cream.text.stats import TextStatistics
+    >>> 
+    >>> analyzer = TextStatistics()
+    >>> 
+    >>> # Analyze a single file
+    >>> stats = analyzer.analyze_file(Path("data.txt"))
+    >>> print(f"Average line length: {stats['average_length']}")
+    >>> 
+    >>> # Analyze all files in a directory
+    >>> results = analyzer.analyze_directory(Path("text_files/"))
+    >>> 
+    >>> # Generate summary
+    >>> summary = analyzer.generate_summary(stats)
+
+Classes:
+    TextStatistics: Main class for text analysis operations.
+"""
 
 from pathlib import Path
 import json
 
 from cream.core.config import config
 from cream.core.exceptions import InvalidFormatError, AudioProcessingError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class TextStatistics:
-    """Text length distribution statistics analyzer."""
+    """Comprehensive text statistics analyzer with support for multiple formats.
+    
+    This class provides methods for analyzing text statistics including line lengths,
+    word counts, character distributions, and percentile calculations. It supports
+    various text file formats and provides detailed statistical analysis.
+    
+    The analyzer handles plain text files, JSON data structures, and CSV files,
+    extracting meaningful text content and computing comprehensive statistics.
+    
+    Example:
+        Creating and using a text statistics analyzer:
+        
+        >>> analyzer = TextStatistics()
+        >>> stats = analyzer.analyze_file(Path("document.txt"))
+        >>> print(f"Total lines: {stats['total_lines']}")
+        >>> print(f"Average words per line: {stats['average_words']}")
+    """
     
     def analyze_file(self, input_file: Path) -> dict[str, int | float | dict[str, int]]:
-        """Analyze text statistics for a single file."""
+        """Analyze comprehensive text statistics for a single file.
+        
+        Processes the input file and calculates detailed statistics including
+        line counts, character counts, word counts, length distributions, and
+        percentile information. Handles multiple file formats automatically.
+        
+        Args:
+            input_file: Path to the text file to analyze.
+            
+        Returns:
+            Dictionary containing comprehensive statistics:
+            - total_lines: Number of non-empty lines
+            - total_characters: Total character count
+            - total_words: Total word count
+            - average_length: Average line length in characters
+            - average_words: Average words per line
+            - min_length/max_length: Shortest and longest line lengths
+            - median_length: Median line length
+            - percentiles: Length percentiles (25th, 50th, 75th, 90th, 95th)
+            - length_distribution: Distribution by character length bins
+            - word_distribution: Distribution by word count bins
+            
+        Raises:
+            InvalidFormatError: If the file format is not supported.
+            FileNotFoundError: If the input file does not exist.
+            AudioProcessingError: If the analysis operation fails.
+            
+        Example:
+            Analyze a text file and examine results:
+            
+            >>> analyzer = TextStatistics()
+            >>> stats = analyzer.analyze_file(Path("corpus.txt"))
+            >>> print(f"Dataset contains {stats['total_lines']} lines")
+            >>> print(f"Average line length: {stats['average_length']:.1f} chars")
+            >>> print(f"Longest line: {stats['max_length']} characters")
+        """
         if not config.is_text_file(input_file):
+            logger.error(f"Unsupported text format for analysis: {input_file.suffix}")
             raise InvalidFormatError(f"Unsupported text format: {input_file.suffix}")
         
         if not input_file.exists():
+            logger.error(f"Input file not found for text analysis: {input_file}")
             raise FileNotFoundError(f"Input file not found: {input_file}")
         
         try:
@@ -136,15 +221,46 @@ class TextStatistics:
             return statistics
             
         except Exception as e:
+            logger.exception(f"Failed to analyze text statistics for {input_file}")
             raise AudioProcessingError(f"Failed to analyze text statistics: {str(e)}")
     
     def analyze_directory(self, input_dir: Path, pattern: str = "*.txt") -> dict[str, dict[str, int | float | dict[str, int]]]:
-        """Analyze text statistics for all text files in directory."""
+        """Analyze text statistics for all matching files in a directory.
+        
+        Processes all files matching the specified pattern in the input directory
+        and calculates statistics for each file. Continues processing even if
+        individual files fail to analyze.
+        
+        Args:
+            input_dir: Path to the directory containing text files.
+            pattern: Glob pattern for file matching. Defaults to "*.txt".
+            
+        Returns:
+            Dictionary mapping filenames to their respective statistics dictionaries.
+            Files that fail to analyze are skipped and logged.
+            
+        Raises:
+            FileNotFoundError: If the input directory does not exist.
+            AudioProcessingError: If no matching files are found.
+            
+        Example:
+            Batch analyze all text files in a directory:
+            
+            >>> analyzer = TextStatistics()
+            >>> results = analyzer.analyze_directory(
+            ...     Path("documents/"),
+            ...     pattern="*.txt"
+            ... )
+            >>> for filename, stats in results.items():
+            ...     print(f"{filename}: {stats['total_lines']} lines")
+        """
         if not input_dir.exists():
+            logger.error(f"Input directory not found for text analysis: {input_dir}")
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
         
         text_files = list(input_dir.glob(pattern))
         if not text_files:
+            logger.error(f"No text files found in {input_dir} matching pattern {pattern}")
             raise AudioProcessingError(f"No text files found in {input_dir} matching pattern {pattern}")
         
         results = {}
@@ -154,13 +270,35 @@ class TextStatistics:
                 stats = self.analyze_file(text_file)
                 results[text_file.name] = stats
             except Exception as e:
-                print(f"Failed to analyze {text_file}: {str(e)}")
+                logger.exception(f"Failed to analyze {text_file}")
                 continue
         
         return results
     
     def generate_summary(self, statistics: dict[str, int | float | dict[str, int]]) -> dict[str, str | dict[str, int | float | dict[str, int]]]:
-        """Generate a summary from text statistics."""
+        """Generate a structured summary from text statistics.
+        
+        Converts detailed statistics into a well-organized summary format
+        suitable for reporting and visualization. Groups related metrics
+        into logical sections.
+        
+        Args:
+            statistics: Statistics dictionary returned by analyze_file().
+            
+        Returns:
+            Structured summary dictionary with sections:
+            - file_summary: Basic file metrics
+            - length_analysis: Line length analysis
+            - distributions: Character and word count distributions
+            
+        Example:
+            Generate a summary from analysis results:
+            
+            >>> analyzer = TextStatistics()
+            >>> stats = analyzer.analyze_file(Path("data.txt"))
+            >>> summary = analyzer.generate_summary(stats)
+            >>> print(f"Median length: {summary['length_analysis']['median_length']}")
+        """
         if not statistics or statistics["total_lines"] == 0:
             return {"error": "No data to summarize"}
         
@@ -191,7 +329,30 @@ class TextStatistics:
         return summary
     
     def compare_files(self, file1_stats: dict[str, int | float | dict[str, int]], file2_stats: dict[str, int | float | dict[str, int]]) -> dict[str, int | float]:
-        """Compare statistics between two files."""
+        """Compare text statistics between two files.
+        
+        Computes differences and ratios between key statistics of two files,
+        useful for comparing datasets or analyzing changes over time.
+        
+        Args:
+            file1_stats: Statistics dictionary for the first file.
+            file2_stats: Statistics dictionary for the second file.
+            
+        Returns:
+            Dictionary containing comparison metrics:
+            - Line count comparison and differences
+            - Average length comparison and differences
+            - Average words comparison and differences
+            
+        Example:
+            Compare two text files:
+            
+            >>> analyzer = TextStatistics()
+            >>> stats1 = analyzer.analyze_file(Path("file1.txt"))
+            >>> stats2 = analyzer.analyze_file(Path("file2.txt"))
+            >>> comparison = analyzer.compare_files(stats1, stats2)
+            >>> print(f"Line difference: {comparison['lines_difference']}")
+        """
         comparison = {
             "file1_lines": file1_stats["total_lines"],
             "file2_lines": file2_stats["total_lines"],
