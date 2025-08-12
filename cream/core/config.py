@@ -32,7 +32,7 @@ class Config:
         config_dir (Path): Cream configuration directory (~/.cream).
         audio_formats (list[str]): List of supported audio file extensions.
         text_formats (list[str]): List of supported text file extensions.
-        models (dict): Configuration for various AI models (MOS, ASR, VAD, SS, SE, Speaker).
+        models (dict): Configuration for AI models (ASR, VAD, Speaker, Separation, Enhancement).
         max_workers (int): Maximum number of worker threads for parallel processing.
 
     Example:
@@ -41,8 +41,8 @@ class Config:
         >>> config = Config()
         >>> config.is_audio_file(Path("test.wav"))
         True
-        >>> config.get_model_config("mos", "nisqa")
-        {'path': '', 'enabled': False}
+        >>> config.get_model_config("asr", "paraformer-zh")
+        {'path': '', 'enabled': False, 'model_type': 'toolkit', ...}
     """
 
     def __init__(self) -> None:
@@ -58,7 +58,7 @@ class Config:
         self.home_dir = Path.home()
         self.config_dir = self.home_dir / ".cream"
         self.model_dir = self.config_dir / "models"
-        self.model_dir.mkdir(exist_ok=True)
+        self.model_dir.mkdir(parents=True, exist_ok=True)
 
         # Default configurations
         self.audio_formats = [
@@ -74,101 +74,86 @@ class Config:
         self.text_formats = [".txt", ".json", ".csv"]
 
         self.models = {
-            "mos": {
-                "nisqa": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "official",
-                    "description": "NISQA: Speech Quality and Naturalness Assessment",
-                    "project_url": "https://github.com/gabrielmittag/NISQA",
-                    "paper": "https://arxiv.org/abs/2104.09494",
-                },
-                "utmosv2": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "official",
-                    "description": "UTMOSv2: UTokyo-SaruLab MOS Prediction System",
-                    "project_url": "https://github.com/sarulab-speech/UTMOSv2",
-                    "paper": "https://arxiv.org/abs/2409.09305",
-                },
-            },
             "asr": {
-                "paraformer": {
+                "paraformer-zh": {
                     "path": "",
                     "enabled": False,
                     "model_type": "toolkit",
                     "toolkit": "funasr",
-                    "description": "Paraformer ASR model from FunASR toolkit",
+                    "description": "Chinese Paraformer ASR model from FunASR toolkit",
                     "project_url": "https://github.com/modelscope/FunASR",
                     "paper": "https://arxiv.org/abs/2206.08317",
                 },
-                "whisper": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "official",
-                    "description": "OpenAI Whisper automatic speech recognition model",
-                    "project_url": "https://github.com/openai/whisper",
-                    "paper": "https://arxiv.org/abs/2212.04356",
-                },
             },
             "vad": {
-                "silero": {
+                "funasr-vad": {
                     "path": "",
                     "enabled": False,
                     "model_type": "toolkit",
-                    "toolkit": "torch.hub",
-                    "description": "Silero VAD model for voice activity detection",
-                    "project_url": "https://github.com/snakers4/silero-vad",
-                    "paper": "https://arxiv.org/abs/2103.04467",
-                }
+                    "toolkit": "funasr",
+                    "description": "FunASR FSMN-VAD model for voice activity detection",
+                    "project_url": "https://github.com/modelscope/FunASR",
+                    "paper": "https://arxiv.org/abs/2305.11013",
+                },
             },
             "speaker": {
-                "3d-speaker": {
+                "3d-speaker-cam++": {
                     "path": "",
                     "enabled": False,
                     "model_type": "toolkit",
-                    "toolkit": "3d-speaker",
-                    "description": "3D-Speaker toolkit for speaker recognition and diarization",
+                    "toolkit": "modelscope",
+                    "description": "3D-Speaker CAM++ model for speaker recognition via ModelScope",
                     "project_url": "https://github.com/alibaba-damo-academy/3D-Speaker",
                     "paper": "https://arxiv.org/abs/2306.15354",
-                }
+                },
+                "3d-speaker-eres2netv2": {
+                    "path": "",
+                    "enabled": False,
+                    "model_type": "toolkit",
+                    "toolkit": "modelscope",
+                    "description": "3D-Speaker ERes2NetV2 model for speaker recognition via ModelScope",
+                    "project_url": "https://github.com/alibaba-damo-academy/3D-Speaker",
+                    "paper": "https://arxiv.org/abs/2306.15354",
+                },
             },
             "separation": {
-                "uvr-roformer": {
+                "audio-separator-vr": {
                     "path": "",
                     "enabled": False,
                     "model_type": "toolkit",
-                    "toolkit": "ultimate-vocal-remover",
-                    "description": "Roformer model via Ultimate Vocal Remover toolkit",
-                    "project_url": "https://github.com/Anjok07/ultimatevocalremovergui",
+                    "toolkit": "audio-separator",
+                    "description": "VR architecture model from python-audio-separator",
+                    "project_url": "https://github.com/nomadkaraoke/python-audio-separator",
                     "paper": "https://arxiv.org/abs/2210.01448",
                 },
-                "uvr-mdx": {
+                "audio-separator-mdx": {
                     "path": "",
                     "enabled": False,
                     "model_type": "toolkit",
-                    "toolkit": "ultimate-vocal-remover",
-                    "description": "MDX-Net model via Ultimate Vocal Remover toolkit",
-                    "project_url": "https://github.com/Anjok07/ultimatevocalremovergui",
+                    "toolkit": "audio-separator",
+                    "description": "MDX-Net architecture model from python-audio-separator",
+                    "project_url": "https://github.com/nomadkaraoke/python-audio-separator",
                     "paper": "https://arxiv.org/abs/2108.13187",
                 },
-                "spleeter": {
+                "audio-separator-htdemucs": {
                     "path": "",
                     "enabled": False,
-                    "model_type": "official",
-                    "description": "Deezer Spleeter for source separation",
-                    "project_url": "https://github.com/deezer/spleeter",
-                    "paper": "https://arxiv.org/abs/2002.08933",
+                    "model_type": "toolkit",
+                    "toolkit": "audio-separator",
+                    "description": "HT-Demucs architecture model from python-audio-separator",
+                    "project_url": "https://github.com/nomadkaraoke/python-audio-separator",
+                    "paper": "https://arxiv.org/abs/2110.09456",
                 },
             },
             "enhancement": {
-                "deep-filter-net": {
+                "frcrn": {
                     "path": "",
                     "enabled": False,
-                    "model_type": "official",
-                    "description": "DeepFilterNet for real-time speech enhancement",
-                    "project_url": "https://github.com/Rikorose/DeepFilterNet",
-                    "paper": "https://arxiv.org/abs/2110.05588",
+                    "model_type": "toolkit",
+                    "toolkit": "modelscope",
+                    "description": "FRCRN speech denoising model from ClearerVoice-Studio via ModelScope",
+                    "project_url": "https://github.com/modelscope/ClearerVoice-Studio",
+                    "paper": "https://arxiv.org/abs/2409.07856",
                 },
             },
         }
@@ -202,7 +187,7 @@ class Config:
 
         Example:
             >>> config = Config()
-            >>> config.get_model_config("mos", "nisqa")
+            >>> config.get_model_config("asr", "paraformer-zh")
             {'path': '', 'enabled': False, 'model_type': 'official', ...}
             >>> config.get_model_config("invalid", "model")
             {}
@@ -243,7 +228,7 @@ class Config:
         Example:
             >>> config = Config()
             >>> config.get_models_by_type("separation", "toolkit")
-            ['uvr-roformer', 'uvr-mdx', 'speechenhancement']
+            ['audio-separator-vr', 'audio-separator-mdx', 'audio-separator-htdemucs']
         """
         category_models = self.models.get(category, {})
         return [
@@ -263,8 +248,8 @@ class Config:
 
         Example:
             >>> config = Config()
-            >>> config.get_toolkit_models("ultimate-vocal-remover")
-            {'separation': ['uvr-roformer', 'uvr-mdx']}
+            >>> config.get_toolkit_models("audio-separator")
+            {'separation': ['audio-separator-vr', 'audio-separator-mdx', 'audio-separator-htdemucs']}
         """
         result = {}
         for category, models in self.models.items():

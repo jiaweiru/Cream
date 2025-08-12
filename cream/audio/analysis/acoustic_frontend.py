@@ -1,10 +1,14 @@
 """Acoustic frontend functionality for audio separation and enhancement.
 
 This module provides classes for audio source separation and audio enhancement
-using various methods.
+using various methods including python-audio-separator models and ClearerVoice-Studio
+enhancement models.
+
+The classes now use a factory pattern for extensible model management, allowing
+easy addition of new models without modifying existing code.
 
 Classes:
-    AudioSeparator: Handles audio source separation tasks.
+    AudioSeparator: Handles audio source separation tasks using multiple model types.
     AudioEnhancer: Handles audio enhancement and noise reduction tasks.
 
 Example:
@@ -12,13 +16,13 @@ Example:
 
         from cream.audio.analysis.acoustic_frontend import AudioSeparator, AudioEnhancer
 
-        # Audio separation
-        separator = AudioSeparator(max_workers=4)
-        separated_files = separator.separate_file(input_path, output_dir, "uvr")
+        # Audio separation with python-audio-separator
+        separator = AudioSeparator()
+        separated_files = separator.separate_file(input_path, output_dir, "audio-separator-vr")
 
-        # Audio enhancement
-        enhancer = AudioEnhancer(max_workers=4)
-        enhancer.enhance_file(input_path, output_path, "deep-filter-net")
+        # Audio enhancement with ClearerVoice-Studio
+        enhancer = AudioEnhancer()
+        enhancer.enhance_file(input_path, output_path, "clearervoice-migu")
 """
 
 from pathlib import Path
@@ -30,74 +34,98 @@ from cream.core.exceptions import (
     ModelNotAvailableError,
 )
 from cream.core.logging import get_logger
+from cream.core.model_factory import separation_factory, enhancement_factory
 
 logger = get_logger(__name__)
 
 
 class AudioSeparator:
-    """Audio source separation processor.
+    """Audio source separation processor using multiple model architectures.
 
-    This class provides functionality to separate vocals from mixed audio
-    using various separation models. Models are loaded lazily when first used.
+    This class provides functionality to separate audio sources using various
+    separation models including python-audio-separator models (VR, MDX, HT-Demucs)
+    and Spleeter. Models are managed through a factory pattern for extensibility.
+
+    The processor supports both single file and batch directory processing with
+    configurable multi-threading for efficient parallel processing.
 
     Attributes:
-        _models (dict): Dictionary containing loaded separation models.
+        available_methods: List of available separation model names.
+        default_method: Default separation method if none specified.
 
     Example:
-        Basic usage:
+        Basic usage with python-audio-separator models:
 
             separator = AudioSeparator()
+            
+            # Use VR architecture model
             output_files = separator.separate_file(
                 Path("input.wav"),
                 Path("output/"),
-                method="uvr"
+                method="audio-separator-vr"
+            )
+            
+            # Use MDX-Net architecture model
+            output_files = separator.separate_file(
+                Path("input.wav"),
+                Path("output/"),
+                method="audio-separator-mdx"
             )
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize AudioSeparator with available separation methods."""
-        self._models = {}
-        self.available_methods = config.get_available_models("separation")
+        self._model_instances = {}
+        self.available_methods = separation_factory.list_models()
+        
         if not self.available_methods:
             logger.warning(
                 "No separation methods are available. Check model configuration."
             )
         else:
             logger.info(f"Available separation methods: {self.available_methods}")
+        
         self.default_method = (
             self.available_methods[0] if self.available_methods else None
         )
 
     def _get_model(self, method: str):
-        """Load and cache model for the specified method."""
-        if method in self._models:
-            return self._models[method]
+        """Get or create model instance for the specified method.
+        
+        Args:
+            method: Name of the separation method/model.
+            
+        Returns:
+            Model instance ready for separation.
+            
+        Raises:
+            ModelNotAvailableError: If the method is not available or fails to load.
+        """
+        if method in self._model_instances:
+            return self._model_instances[method]
 
+        # Get model configuration from config
         model_config = config.get_model_config("separation", method)
-        if not model_config.get("enabled", False):
+        if not model_config and method not in self.available_methods:
+            # If not in config, create default config for factory models
+            model_config = {"enabled": True}
+        
+        if not model_config.get("enabled", True):
             raise ModelNotAvailableError(
-                f"Separation method {method} is not available or not enabled"
+                f"Separation method {method} is not enabled"
             )
 
-        # Load model based on method
         try:
-            if method in ["uvr-roformer", "uvr-mdx"]:
-                # TODO: Replace with actual UVR model loading
-                model = f"mock_uvr_model_{method}_{model_config.get('path', '')}"
-            elif method == "spleeter":
-                # TODO: Replace with actual Spleeter model loading
-                model = f"mock_spleeter_model_{model_config.get('path', '')}"
-            else:
-                raise ValueError(f"Unknown separation method: {method}")
-
-            self._models[method] = model
-            logger.info(f"Loaded separation model: {method}")
+            # Create model using factory
+            model = separation_factory.create_model(method, model_config)
+            self._model_instances[method] = model
+            logger.info(f"Created separation model: {method}")
             return model
 
         except Exception as e:
-            logger.exception(f"Failed to load separation model {method}")
+            logger.exception(f"Failed to create separation model {method}")
             raise ModelNotAvailableError(
-                f"Failed to load separation model {method}: {str(e)}"
+                f"Failed to create separation model {method}: {str(e)}"
             )
 
     def separate_file(
@@ -106,13 +134,13 @@ class AudioSeparator:
         """Separate a single audio file using specified method.
 
         Args:
-            input_path (Path): Path to input audio file.
-            output_dir (Path): Directory where separated files will be saved.
-            method (str): Separation method to use (e.g., "uvr").
-            overwrite (bool): Whether to overwrite existing output files.
+            input_path: Path to input audio file.
+            output_dir: Directory where separated files will be saved.
+            method: Separation method to use (e.g., "audio-separator-vr", "audio-separator-mdx", "spleeter").
+            overwrite: Whether to overwrite existing output files.
 
         Returns:
-            list[Path]: List of paths to generated separated audio files.
+            List of paths to generated separated audio files.
 
         Raises:
             InvalidFormatError: If input file format is not supported.
@@ -134,172 +162,191 @@ class AudioSeparator:
 
         # Check if method is available
         if method not in self.available_methods:
-            logger.error(f"Separation method {method} is not available or not enabled")
+            logger.error(f"Separation method {method} is not available")
             raise ModelNotAvailableError(
-                f"Separation method {method} is not available or not enabled"
+                f"Separation method {method} is not available"
             )
 
         try:
-            if method in ["uvr-roformer", "uvr-mdx"]:
-                return self._separate_with_UVR(input_path, output_dir, overwrite, method)
-            elif method == "spleeter":
-                return self._separate_with_spleeter(input_path, output_dir, overwrite)
-            else:
-                logger.error(f"Unknown separation method: {method}")
-                raise ModelNotAvailableError(f"Unknown separation method: {method}")
+            # Get model instance and perform separation
+            model = self._get_model(method)
+            
+            # Check if output files already exist
+            base_name = input_path.stem
+            potential_outputs = list(output_dir.glob(f"{base_name}*"))
+            if potential_outputs and not overwrite:
+                logger.info(f"Output files already exist for {input_path.name}, skipping")
+                return potential_outputs
+            
+            # Perform separation using the model
+            if not model.is_loaded:
+                model.load()
+            separated_files = model.separate(input_path, output_dir)
+            
+            logger.info(f"Successfully separated {input_path} into {len(separated_files)} files")
+            return separated_files
 
         except Exception as e:
             logger.exception(f"Failed to separate {input_path}")
             raise AudioProcessingError(f"Failed to separate {input_path}: {str(e)}")
 
-    def _separate_with_UVR(
-        self, input_path: Path, output_dir: Path, overwrite: bool, method: str = "uvr-roformer"
-    ) -> list[Path]:
-        """Separate using UVR (Ultimate Vocal Remover) model.
-
+    def separate_directory(
+        self, input_dir: Path, output_dir: Path, method: str, overwrite: bool = False
+    ) -> dict[str, list[Path]]:
+        """Separate all audio files in a directory using the specified method.
+        
         Args:
-            input_path (Path): Path to input audio file.
-            output_dir (Path): Directory for output files.
-            overwrite (bool): Whether to overwrite existing files.
-            method (str): UVR method to use ("uvr-roformer" or "uvr-mdx").
-
+            input_dir: Path to the input directory containing audio files.
+            output_dir: Path to the output directory where separated files will be saved.
+            method: Separation method to use.
+            overwrite: Whether to overwrite existing output files.
+            
         Returns:
-            list[Path]: List of separated component file paths.
+            Dictionary mapping original filenames to lists of separated file paths.
+            
+        Raises:
+            FileNotFoundError: If the input directory does not exist.
+            AudioProcessingError: If no audio files are found or processing fails.
         """
-        logger.info(f"UVR {method} separating {input_path}")
-        loaded_model = self._get_model(method)
-        outputs = []
-        base_name = input_path.stem
-
-        for component in ["vocals", "accompaniment"]:
-            output_name = f"{base_name}_{component}{input_path.suffix}"
-            output_path = output_dir / output_name
-
-            if not output_path.exists() or overwrite:
-                # TODO: Implement actual UVR model inference using loaded_model
-                output_path.touch()
-                outputs.append(output_path)
-
-        return outputs
-
-    def _separate_with_spleeter(
-        self, input_path: Path, output_dir: Path, overwrite: bool
-    ) -> list[Path]:
-        """Separate using Spleeter model.
-
-        Args:
-            input_path (Path): Path to input audio file.
-            output_dir (Path): Directory for output files.
-            overwrite (bool): Whether to overwrite existing files.
-
-        Returns:
-            list[Path]: List of separated component file paths.
-        """
-        logger.info(f"Spleeter separating {input_path}")
-        loaded_model = self._get_model("spleeter")
-        outputs = []
-        base_name = input_path.stem
-
-        # Spleeter typically separates into vocals and accompaniment (2stems)
-        for component in ["vocals", "accompaniment"]:
-            output_name = f"{base_name}_{component}{input_path.suffix}"
-            output_path = output_dir / output_name
-
-            if not output_path.exists() or overwrite:
-                # TODO: Implement actual Spleeter model inference using loaded_model
-                output_path.touch()
-                outputs.append(output_path)
-
-        return outputs
+        if not input_dir.exists():
+            logger.error(f"Input directory not found: {input_dir}")
+            raise FileNotFoundError(f"Input directory not found: {input_dir}")
+        
+        # Find all audio files
+        audio_files = []
+        for path in input_dir.rglob("*"):
+            if path.is_file() and config.is_audio_file(path):
+                audio_files.append(path)
+        
+        if not audio_files:
+            logger.error(f"No audio files found in {input_dir}")
+            raise AudioProcessingError(f"No audio files found in {input_dir}")
+        
+        results = {}
+        
+        # Process files sequentially
+        for audio_file in audio_files:
+            try:
+                relative_path = audio_file.relative_to(input_dir)
+                file_output_dir = output_dir / relative_path.parent / relative_path.stem
+                
+                separated_files = self.separate_file(audio_file, file_output_dir, method, overwrite)
+                results[audio_file.name] = separated_files
+            except Exception as e:
+                logger.error(f"Failed to process {audio_file}: {str(e)}")
+                results[audio_file.name] = []
+        
+        successful = sum(1 for files in results.values() if files)
+        logger.info(f"Processed {len(audio_files)} files, {successful} successful")
+        return results
 
 
 class AudioEnhancer:
-    """Audio enhancement and noise reduction processor.
+    """Audio enhancement and noise reduction processor using multiple models.
 
-    This class provides functionality to enhance audio quality by reducing noise
-    and improving signal clarity using various enhancement methods. Models are
-    loaded lazily when first used.
+    This class provides functionality to enhance audio quality using various
+    enhancement models including ClearerVoice-Studio models (MiGu, DataBaker)
+    and DeepFilterNet. Models are managed through a factory pattern for extensibility.
+
+    The processor supports both single file and batch directory processing with
+    configurable multi-threading for efficient parallel processing.
 
     Attributes:
-        _models (dict): Dictionary containing loaded enhancement models.
+        available_methods: List of available enhancement model names.
+        default_method: Default enhancement method if none specified.
 
     Example:
-        Basic usage:
+        Basic usage with ClearerVoice-Studio models:
 
             enhancer = AudioEnhancer()
+            
+            # Use MiGu model
             success = enhancer.enhance_file(
                 Path("noisy.wav"),
                 Path("clean.wav"),
-                method="deep-filter-net"
+                method="clearervoice-migu"
+            )
+            
+            # Use DataBaker model
+            success = enhancer.enhance_file(
+                Path("noisy.wav"),
+                Path("clean.wav"),
+                method="clearervoice-databaker"
             )
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize AudioEnhancer with available enhancement methods."""
-        self._models = {}
-        self.available_methods = config.get_available_models("enhancement")
+        self._model_instances = {}
+        self.available_methods = enhancement_factory.list_models()
+        
         if not self.available_methods:
             logger.warning(
                 "No enhancement methods are available. Check model configuration."
             )
         else:
             logger.info(f"Available enhancement methods: {self.available_methods}")
+        
         self.default_method = (
             self.available_methods[0] if self.available_methods else None
         )
 
     def _get_model(self, method: str):
-        """Load and cache model for the specified method."""
-        if method in self._models:
-            return self._models[method]
+        """Get or create model instance for the specified method.
+        
+        Args:
+            method: Name of the enhancement method/model.
+            
+        Returns:
+            Model instance ready for enhancement.
+            
+        Raises:
+            ModelNotAvailableError: If the method is not available or fails to load.
+        """
+        if method in self._model_instances:
+            return self._model_instances[method]
 
+        # Get model configuration from config
         model_config = config.get_model_config("enhancement", method)
-        if not model_config.get("enabled", False):
+        if not model_config and method not in self.available_methods:
+            # If not in config, create default config for factory models
+            model_config = {"enabled": True}
+        
+        if not model_config.get("enabled", True):
             raise ModelNotAvailableError(
-                f"Enhancement method {method} is not available or not enabled"
+                f"Enhancement method {method} is not enabled"
             )
 
-        # Load model based on method
         try:
-            if method == "deep-filter-net":
-                # TODO: Replace with actual Deep Filter Net model loading
-                model = f"mock_deep_filter_net_model_{model_config.get('path', '')}"
-            elif method == "rnnoise":
-                # TODO: Replace with actual RNNoise model loading
-                model = f"mock_rnnoise_model_{model_config.get('path', '')}"
-            elif method == "speechenhancement":
-                # TODO: Replace with actual SpeechEnhancement model loading
-                model = f"mock_speechenhancement_model_{model_config.get('path', '')}"
-            else:
-                raise ValueError(f"Unknown enhancement method: {method}")
-
-            self._models[method] = model
-            logger.info(f"Loaded enhancement model: {method}")
+            # Create model using factory
+            model = enhancement_factory.create_model(method, model_config)
+            self._model_instances[method] = model
+            logger.info(f"Created enhancement model: {method}")
             return model
 
         except Exception as e:
-            logger.exception(f"Failed to load enhancement model {method}")
+            logger.exception(f"Failed to create enhancement model {method}")
             raise ModelNotAvailableError(
-                f"Failed to load enhancement model {method}: {str(e)}"
+                f"Failed to create enhancement model {method}: {str(e)}"
             )
 
     def enhance_file(
         self,
         input_path: Path,
         output_path: Path,
-        method: str = "deep-filter-net",
+        method: str,
         overwrite: bool = False,
     ) -> bool:
         """Enhance a single audio file using specified method.
 
         Args:
-            input_path (Path): Path to input audio file.
-            output_path (Path): Path where enhanced file will be saved.
-            method (str): Enhancement method ("deep-filter-net", "speechenhancement", "rnnoise").
-            overwrite (bool): Whether to overwrite existing output file.
+            input_path: Path to input audio file.
+            output_path: Path where enhanced file will be saved.
+            method: Enhancement method ("clearervoice-migu", "clearervoice-databaker", "deep-filter-net").
+            overwrite: Whether to overwrite existing output file.
 
         Returns:
-            bool: True if enhancement was performed, False if skipped.
+            True if enhancement was performed, False if skipped.
 
         Raises:
             InvalidFormatError: If input file format is not supported.
@@ -312,6 +359,7 @@ class AudioEnhancer:
             raise InvalidFormatError(f"Unsupported audio format: {input_path.suffix}")
 
         if output_path.exists() and not overwrite:
+            logger.info(f"Output file already exists: {output_path}, skipping")
             return False
 
         # Use default method if none specified and available
@@ -321,82 +369,79 @@ class AudioEnhancer:
 
         # Check if method is available
         if method not in self.available_methods:
-            logger.error(f"Enhancement method {method} is not available or not enabled")
+            logger.error(f"Enhancement method {method} is not available")
             raise AudioProcessingError(
-                f"Enhancement method {method} is not available or not enabled"
+                f"Enhancement method {method} is not available"
             )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            if method == "deep-filter-net":
-                return self._enhance_with_deep_filter_net(input_path, output_path)
-            elif method == "rnnoise":
-                return self._enhance_with_rnnoise(input_path, output_path)
-            elif method == "speechenhancement":
-                return self._enhance_with_speechenhancement(input_path, output_path)
+            # Get model instance and perform enhancement
+            model = self._get_model(method)
+            
+            # Perform enhancement using the model
+            if not model.is_loaded:
+                model.load()
+            success = model.enhance(input_path, output_path)
+            
+            if success:
+                logger.info(f"Successfully enhanced {input_path} -> {output_path}")
             else:
-                logger.error(f"Unknown enhancement method: {method}")
-                raise AudioProcessingError(f"Unknown enhancement method: {method}")
+                logger.warning(f"Enhancement may have failed for {input_path}")
+            
+            return success
 
         except Exception as e:
             logger.exception(f"Failed to enhance {input_path}")
             raise AudioProcessingError(f"Failed to enhance {input_path}: {str(e)}")
 
-    def _enhance_with_deep_filter_net(
-        self, input_path: Path, output_path: Path
-    ) -> bool:
-        """Enhance using Deep Filter Net model.
-
+    def enhance_directory(
+        self, input_dir: Path, output_dir: Path, method: str, overwrite: bool = False
+    ) -> dict[str, bool]:
+        """Enhance all audio files in a directory using the specified method.
+        
         Args:
-            input_path (Path): Input audio file path.
-            output_path (Path): Output audio file path.
-
+            input_dir: Path to the input directory containing audio files.
+            output_dir: Path to the output directory where enhanced files will be saved.
+            method: Enhancement method to use.
+            overwrite: Whether to overwrite existing output files.
+            
         Returns:
-            bool: True if enhancement was successful.
+            Dictionary mapping original filenames to enhancement success status.
+            
+        Raises:
+            FileNotFoundError: If the input directory does not exist.
+            AudioProcessingError: If no audio files are found or processing fails.
         """
-        logger.info(f"Deep Filter Net enhancing {input_path}")
-        loaded_model = self._get_model("deep-filter-net")
-        # TODO: Implement actual Deep Filter Net model inference using loaded_model
-        import shutil
-
-        shutil.copy2(input_path, output_path)
-        return True
-
-    def _enhance_with_rnnoise(self, input_path: Path, output_path: Path) -> bool:
-        """Enhance using RNNoise model.
-
-        Args:
-            input_path (Path): Input audio file path.
-            output_path (Path): Output audio file path.
-
-        Returns:
-            bool: True if enhancement was successful.
-        """
-        logger.info(f"RNNoise enhancing {input_path}")
-        loaded_model = self._get_model("rnnoise")
-        # TODO: Implement actual RNNoise model inference using loaded_model
-        import shutil
-
-        shutil.copy2(input_path, output_path)
-        return True
-
-    def _enhance_with_speechenhancement(
-        self, input_path: Path, output_path: Path
-    ) -> bool:
-        """Enhance using SpeechEnhancement model.
-
-        Args:
-            input_path (Path): Input audio file path.
-            output_path (Path): Output audio file path.
-
-        Returns:
-            bool: True if enhancement was successful.
-        """
-        logger.info(f"SpeechEnhancement enhancing {input_path}")
-        loaded_model = self._get_model("speechenhancement")
-        # TODO: Implement actual SpeechEnhancement model inference using loaded_model
-        import shutil
-
-        shutil.copy2(input_path, output_path)
-        return True
+        if not input_dir.exists():
+            logger.error(f"Input directory not found: {input_dir}")
+            raise FileNotFoundError(f"Input directory not found: {input_dir}")
+        
+        # Find all audio files
+        audio_files = []
+        for path in input_dir.rglob("*"):
+            if path.is_file() and config.is_audio_file(path):
+                audio_files.append(path)
+        
+        if not audio_files:
+            logger.error(f"No audio files found in {input_dir}")
+            raise AudioProcessingError(f"No audio files found in {input_dir}")
+        
+        results = {}
+        
+        # Process files sequentially
+        for audio_file in audio_files:
+            try:
+                relative_path = audio_file.relative_to(input_dir)
+                output_path = output_dir / relative_path
+                
+                success = self.enhance_file(audio_file, output_path, method, overwrite)
+                results[audio_file.name] = success
+            except Exception as e:
+                logger.error(f"Failed to enhance {audio_file}: {str(e)}")
+                results[audio_file.name] = False
+        
+        successful = sum(1 for success in results.values() if success)
+        logger.info(f"Processed {len(audio_files)} files, {successful} successful")
+        return results

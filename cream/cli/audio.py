@@ -42,7 +42,7 @@ def segment_audio(
     output_dir: Path = typer.Argument(..., help="Output directory for segmented audio"),
     method: str = typer.Option("fixed", "--method", "-m", help="Segmentation method: fixed or vad"),
     length: float = typer.Option(10.0, "--length", "-l", help="Segment length in seconds (for fixed method)"),
-    model: str = typer.Option("silero-vad", "--model", help="VAD model name (for vad method)"),
+    model: str = typer.Option("funasr-vad", "--model", help="VAD model name (for vad method)"),
     overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing files")
 ):
     """Segment audio files using fixed length or VAD."""
@@ -112,7 +112,7 @@ def analyze_mos(
 def analyze_asr(
     input_dir: Path = typer.Argument(..., help="Input directory containing audio files"),
     reference: Path | None = typer.Option(None, "--reference", "-r", help="Reference text file"),
-    model: str = typer.Option("paraformer", "--model", "-m", help="ASR model: paraformer or whisper"),
+    model: str = typer.Option("paraformer-zh", "--model", "-m", help="ASR model: paraformer-zh"),
     output: Path | None = typer.Option(None, "--output", "-o", help="Output file for results")
 ):
     """Evaluate ASR pronunciation accuracy."""
@@ -189,10 +189,10 @@ def analyze_duration(
 def separate_audio(
     input_dir: Path = typer.Argument(..., help="Input directory containing audio files"),
     output_dir: Path = typer.Argument(..., help="Output directory for separated audio"),
-    method: str = typer.Option("uvr", "--method", "-m", help="Separation method: uvr, spleeter, or htdemucs"),
+    method: str = typer.Option("audio-separator-vr", "--method", "-m", help="Separation method (audio-separator-vr, audio-separator-mdx, audio-separator-htdemucs)"),
     overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing files")
 ):
-    """Perform audio source separation using acoustic frontend."""
+    """Perform audio source separation using python-audio-separator."""
     from cream.audio.analysis.acoustic_frontend import AudioSeparator
     
     console.print(f"[green]Performing audio separation using {method} method[/green]")
@@ -208,10 +208,10 @@ def separate_audio(
 def enhance_audio(
     input_dir: Path = typer.Argument(..., help="Input directory containing audio files"),
     output_dir: Path = typer.Argument(..., help="Output directory for enhanced audio"),
-    method: str = typer.Option("deep-filter-net", "--method", "-m", help="Enhancement method: deep-filter-net, speechenhancement, or rnnoise"),
+    method: str = typer.Option("frcrn", "--method", "-m", help="Enhancement method: frcrn"),
     overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing files")
 ):
-    """Perform audio enhancement and noise reduction using acoustic frontend."""
+    """Perform audio enhancement and noise reduction using FRCRN model."""
     from cream.audio.analysis.acoustic_frontend import AudioEnhancer
     
     console.print(f"[green]Performing audio enhancement using {method} method[/green]")
