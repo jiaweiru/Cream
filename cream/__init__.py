@@ -27,9 +27,8 @@ __version__ = "0.1.0"
 __author__ = "Jiawei Ru"
 __description__ = "Simple and convenient audio data analysis and processing toolkit"
 
-# Initialize logging configuration with sensible defaults
-from .core.logging import configure_logging
-configure_logging(level="INFO", console_output=True)
+# Initialize logging with sensible defaults
+from .core.logging import setup
 
 # Main classes and functions for easy access
 from .core.config import config

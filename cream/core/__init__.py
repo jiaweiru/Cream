@@ -8,6 +8,7 @@ from .exceptions import (
     ModelNotAvailableError,
     ValidationError
 )
+from .logging import logger, setup, get_logger
 
 __all__ = [
     "config",
@@ -15,5 +16,8 @@ __all__ = [
     "AudioProcessingError",
     "InvalidFormatError",
     "ModelNotAvailableError", 
-    "ValidationError"
+    "ValidationError",
+    "logger",
+    "setup", 
+    "get_logger"
 ]

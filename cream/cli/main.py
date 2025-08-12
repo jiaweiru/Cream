@@ -15,14 +15,14 @@ For help:
         $ cream audio --help
 """
 
+import os
 import typer
 from pathlib import Path
 from rich.console import Console
 from cream.cli import audio, text, utils
-from cream.core.logging import configure_logging, get_logger
+from cream.core.logging import setup, logger
 
 console = Console()
-logger = get_logger(__name__)
 
 app = typer.Typer(
     name="cream",
@@ -56,10 +56,9 @@ def main(
     Raises:
         typer.Exit: When version flag is used.
     """
-    configure_logging(
+    setup(
         level=log_level.upper(),
-        log_file=Path(log_file) if log_file else None,
-        console_output=True,
+        file=Path(log_file) if log_file else None,
         colorize=not no_color
     )
     

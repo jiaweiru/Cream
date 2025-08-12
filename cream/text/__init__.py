@@ -1,9 +1,5 @@
-"""Text processing and analysis module."""
+"""Text processing and analysis module.
 
-from .normalization import TextNormalizer
-from .stats import TextStatistics
-
-__all__ = [
-    "TextNormalizer",
-    "TextStatistics"
-]
+This module contains text processing and analysis implementations.
+For direct access to classes, import from the main cream package.
+"""

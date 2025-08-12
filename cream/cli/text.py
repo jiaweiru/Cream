@@ -3,7 +3,7 @@
 import typer
 from pathlib import Path
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from cream.utils.progress import create_analysis_progress
 
 console = Console()
 app = typer.Typer(help="Text processing commands")
@@ -20,11 +20,7 @@ def text_stats(
     console.print(f"[green]Analyzing text statistics for {input_file}[/green]")
     
     analyzer = TextStatistics()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_analysis_progress() as progress:
         task = progress.add_task("Analyzing text...", total=None)
         stats = analyzer.analyze_file(input_file)
         progress.update(task, description="✅ Analysis completed")
@@ -54,11 +50,7 @@ def normalize_text(
     console.print(f"[green]Normalizing text using {method} method[/green]")
     
     normalizer = TextNormalizer()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_analysis_progress() as progress:
         task = progress.add_task("Normalizing text...", total=None)
         normalizer.normalize_file(input_file, output_file, method, overwrite)
         progress.update(task, description="✅ Normalization completed")

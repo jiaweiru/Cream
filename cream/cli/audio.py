@@ -3,7 +3,7 @@
 import typer
 from pathlib import Path
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from cream.utils.progress import create_audio_progress, create_analysis_progress
 
 console = Console()
 app = typer.Typer(help="Audio processing and analysis commands")
@@ -30,11 +30,7 @@ def resample_audio(
     console.print(f"[green]Resampling audio files from {input_dir} to {sample_rate}Hz[/green]")
     
     resampler = AudioResampler()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_audio_progress() as progress:
         task = progress.add_task("Processing files...", total=None)
         resampler.resample_directory(input_dir, output_dir, sample_rate, overwrite)
         progress.update(task, description="✅ Resampling completed")
@@ -55,11 +51,7 @@ def segment_audio(
     console.print(f"[green]Segmenting audio files using {method} method[/green]")
     
     segmenter = AudioSegmenter()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_audio_progress() as progress:
         task = progress.add_task("Processing files...", total=None)
         if method == "fixed":
             segmenter.segment_fixed_length(input_dir, output_dir, length, overwrite)
@@ -85,11 +77,7 @@ def normalize_audio(
     console.print(f"[green]Normalizing audio files using {method} method[/green]")
     
     normalizer = AudioNormalizer()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_audio_progress() as progress:
         task = progress.add_task("Processing files...", total=None)
         normalizer.normalize_directory(input_dir, output_dir, method, target, overwrite)
         progress.update(task, description="✅ Normalization completed")
@@ -107,11 +95,7 @@ def analyze_mos(
     console.print(f"[green]Evaluating audio quality using {model} model[/green]")
     
     evaluator = MOSEvaluator()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_analysis_progress() as progress:
         task = progress.add_task("Analyzing files...", total=None)
         results = evaluator.evaluate_directory(input_dir, model)
         progress.update(task, description="✅ Analysis completed")
@@ -137,11 +121,7 @@ def analyze_asr(
     console.print(f"[green]Evaluating pronunciation accuracy using {model} model[/green]")
     
     evaluator = IntelligibilityEvaluator()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_analysis_progress() as progress:
         task = progress.add_task("Analyzing files...", total=None)
         results = evaluator.evaluate_directory(input_dir, reference, model)
         progress.update(task, description="✅ Analysis completed")
@@ -166,11 +146,7 @@ def analyze_speaker(
     console.print("[green]Analyzing speaker similarity[/green]")
     
     analyzer = SpeakerAnalyzer()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_analysis_progress() as progress:
         task = progress.add_task("Analyzing files...", total=None)
         results = analyzer.analyze_directory(input_dir, cluster)
         progress.update(task, description="✅ Analysis completed")
@@ -194,11 +170,7 @@ def analyze_duration(
     console.print("[green]Analyzing audio duration statistics[/green]")
     
     analyzer = DurationAnalyzer()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_analysis_progress() as progress:
         task = progress.add_task("Analyzing files...", total=None)
         stats = analyzer.analyze_directory(input_dir)
         progress.update(task, description="✅ Analysis completed")
@@ -226,11 +198,7 @@ def separate_audio(
     console.print(f"[green]Performing audio separation using {method} method[/green]")
     
     separator = AudioSeparator()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_audio_progress() as progress:
         task = progress.add_task("Processing files...", total=None)
         separator.separate_directory(input_dir, output_dir, method, overwrite)
         progress.update(task, description="✅ Separation completed")
@@ -249,11 +217,7 @@ def enhance_audio(
     console.print(f"[green]Performing audio enhancement using {method} method[/green]")
     
     enhancer = AudioEnhancer()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
+    with create_audio_progress() as progress:
         task = progress.add_task("Processing files...", total=None)
         enhancer.enhance_directory(input_dir, output_dir, method, overwrite)
         progress.update(task, description="✅ Enhancement completed")

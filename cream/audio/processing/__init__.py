@@ -1,11 +1,5 @@
-"""Audio processing submodule."""
+"""Audio processing submodule.
 
-from .resample import AudioResampler
-from .segmentation import AudioSegmenter
-from .normalization import AudioNormalizer
-
-__all__ = [
-    "AudioResampler",
-    "AudioSegmenter", 
-    "AudioNormalizer"
-]
+This module contains audio processing implementations.
+For direct access to classes, import from the main cream package.
+"""

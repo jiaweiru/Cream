@@ -1,8 +1,6 @@
 """Speaker similarity and clustering functionality using 3D-Speaker."""
 
 from pathlib import Path
-import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor
 
 from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError, InvalidFormatError, ModelNotAvailableError
@@ -14,8 +12,30 @@ logger = get_logger(__name__)
 class SpeakerAnalyzer:
     """Speaker similarity analyzer and clustering processor."""
     
-    def __init__(self, max_workers: int | None = None):
-        self.max_workers = max_workers or config.max_workers
+    def __init__(self):
+        """Initialize the speaker analyzer with 3D-Speaker model."""
+        self.model = self._load_model()
+    
+    def _load_model(self) -> object:
+        """Load and initialize 3D-Speaker model.
+        
+        Returns:
+            Loaded 3D-Speaker model instance.
+        """
+        model_config = config.get_model_config("speaker", "3d-speaker")
+        if not model_config.get("enabled", False):
+            logger.error("3D-Speaker model is not available")
+            raise ModelNotAvailableError("3D-Speaker model is not available")
+        
+        try:
+            # TODO: Replace with actual model loading
+            # model = load_3d_speaker_model(model_config)
+            model = "mock_3d_speaker_model"
+            logger.info("3D-Speaker model loaded successfully")
+            return model
+        except Exception as e:
+            logger.exception("Failed to load 3D-Speaker model")
+            raise ModelNotAvailableError(f"Failed to load 3D-Speaker model: {e}")
     
     def extract_embedding(self, audio_path: Path) -> list[float]:
         """Extract speaker embedding from audio file."""
@@ -23,15 +43,11 @@ class SpeakerAnalyzer:
             logger.error(f"Unsupported audio format for speaker analysis: {audio_path.suffix}")
             raise InvalidFormatError(f"Unsupported audio format: {audio_path.suffix}")
         
-        model_config = config.get_model_config("speaker", "3d-speaker")
-        if not model_config.get("enabled", False):
-            logger.error("3D-Speaker model is not available")
-            raise ModelNotAvailableError("3D-Speaker model is not available")
-        
         try:
             # Placeholder for actual speaker embedding extraction
-            # In real implementation, this would use 3D-Speaker library
+            # In real implementation, this would use the loaded model from self.model
             logger.info(f"Extracting speaker embedding for {audio_path}")
+            loaded_model = self.model
             
             # Mock embedding vector (256-dimensional)
             import random
@@ -101,56 +117,6 @@ class SpeakerAnalyzer:
             logger.exception("Failed to cluster speakers")
             raise AudioProcessingError(f"Failed to cluster speakers: {str(e)}")
     
-    def analyze_directory(self, input_dir: Path, cluster: bool = False) -> dict[str, int | dict[str, list[float]] | dict[str, int] | dict[str, dict[str, list[str] | int]]]:
-        """Analyze speaker similarity for all audio files in directory."""
-        if not input_dir.exists():
-            logger.error(f"Input directory not found for speaker analysis: {input_dir}")
-            raise FileNotFoundError(f"Input directory not found: {input_dir}")
-        
-        audio_files = []
-        for path in input_dir.rglob("*"):
-            if path.is_file() and config.is_audio_file(path):
-                audio_files.append(path)
-        
-        if not audio_files:
-            logger.error(f"No audio files found for speaker analysis in {input_dir}")
-            raise AudioProcessingError(f"No audio files found in {input_dir}")
-        
-        # Extract embeddings
-        embeddings = {}
-        
-        def process_file(audio_file):
-            embedding = self.extract_embedding(audio_file)
-            return audio_file.name, embedding
-        
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_file = {executor.submit(process_file, af): af for af in audio_files}
-            
-            for future in concurrent.futures.as_completed(future_to_file):
-                file_name, embedding = future.result()
-                embeddings[file_name] = embedding
-        
-        results = {
-            "total_files": len(audio_files),
-            "embeddings": embeddings
-        }
-        
-        if cluster:
-            clusters = self.cluster_speakers(embeddings)
-            results["clusters"] = clusters
-            results["num_speakers"] = len(set(clusters.values()))
-            
-            # Calculate cluster statistics
-            cluster_stats = {}
-            for cluster_id in set(clusters.values()):
-                cluster_files = [f for f, c in clusters.items() if c == cluster_id]
-                cluster_stats[f"speaker_{cluster_id}"] = {
-                    "files": cluster_files,
-                    "count": len(cluster_files)
-                }
-            results["cluster_stats"] = cluster_stats
-        
-        return results
     
     def compare_speakers(self, file1: Path, file2: Path) -> dict[str, str | float]:
         """Compare similarity between two audio files."""
