@@ -19,6 +19,22 @@ from pathlib import Path
 import os
 
 
+class ProcessingConfig:
+    """Configuration for processing operations."""
+    
+    def __init__(self):
+        self.max_workers = 1  # Default to single worker
+        self.show_progress = True
+        self.timeout_seconds = 300  # 5 minutes default timeout
+        self.enable_logging = True
+        
+    def update(self, **kwargs):
+        """Update configuration values."""
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+
 class Config:
     """Global configuration manager for the cream package.
 
@@ -159,7 +175,11 @@ class Config:
         }
 
         # Processing defaults
-        self.max_workers = os.cpu_count() or 4
+        self.processing = ProcessingConfig()
+        
+        # Legacy compatibility
+        self.max_workers = self.processing.max_workers
+        self.show_progress = self.processing.show_progress
 
     def get_model_config(
         self, category: str, model_name: str
@@ -305,6 +325,47 @@ class Config:
             False
         """
         return path.suffix.lower() in self.text_formats
+    
+    def set_parallel_config(self, num_workers: int | None = None, show_progress: bool | None = None) -> None:
+        """Set parallel processing configuration.
+        
+        Args:
+            num_workers: Number of workers. If None, keeps current setting.
+            show_progress: Whether to show progress bars. If None, keeps current setting.
+        """
+        update_dict = {}
+        if num_workers is not None:
+            update_dict['max_workers'] = num_workers
+            self.max_workers = num_workers  # Legacy compatibility
+        if show_progress is not None:
+            update_dict['show_progress'] = show_progress
+            self.show_progress = show_progress  # Legacy compatibility
+        
+        if update_dict:
+            self.processing.update(**update_dict)
+    
+    def get_processor_config(self, processor_type: str = None) -> dict[str, str | int | float | bool]:
+        """Get configuration for processors.
+        
+        Args:
+            processor_type: Optional processor type for specific config.
+            
+        Returns:
+            Dictionary with processor configuration.
+        """
+        base_config = {
+            'max_workers': self.processing.max_workers,
+            'show_progress': self.processing.show_progress,
+            'timeout_seconds': self.processing.timeout_seconds,
+            'enable_logging': self.processing.enable_logging
+        }
+        
+        # Add processor-specific config if needed
+        if processor_type:
+            processor_specific = getattr(self, f"{processor_type}_config", {})
+            base_config.update(processor_specific)
+        
+        return base_config
 
 
 config = Config()

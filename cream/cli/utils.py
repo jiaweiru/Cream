@@ -3,7 +3,7 @@
 import typer
 from pathlib import Path
 from rich.console import Console
-from cream.utils.progress import create_file_progress
+from cream.utils.progress import create_progress
 
 console = Console()
 app = typer.Typer(help="Utility commands")
@@ -23,7 +23,7 @@ def sample_files(
     console.print(f"[green]Sampling {count} files from {input_dir}[/green]")
     
     sampler = FileSampler(seed)
-    with create_file_progress() as progress:
+    with create_progress() as progress:
         task = progress.add_task("Sampling files...", total=None)
         sampled_files = sampler.sample_directory(input_dir, output_dir, count, pattern)
         progress.update(task, description="✅ Sampling completed")
@@ -44,7 +44,7 @@ def index_match(
     console.print(f"[green]Matching indices between {source} and {target}[/green]")
     
     matcher = IndexMatcher()
-    with create_file_progress() as progress:
+    with create_progress() as progress:
         task = progress.add_task("Matching indices...", total=None)
         matches = matcher.match_indices(source, target, pattern)
         progress.update(task, description="✅ Matching completed")

@@ -3,12 +3,11 @@
 from pathlib import Path
 import random
 import shutil
-import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor
 
 from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError
 from cream.core.logging import get_logger
+from cream.core.parallel import create_batch_processor
 
 logger = get_logger(__name__)
 
@@ -16,8 +15,24 @@ logger = get_logger(__name__)
 class FileSampler:
     """File sampling utility for random selection and copying."""
     
-    def __init__(self, seed: int | None = None, max_workers: int | None = None):
-        self.max_workers = max_workers or config.max_workers
+    def __init__(
+        self, 
+        seed: int | None = None, 
+        num_workers: int | None = None,
+        show_progress: bool | None = None
+    ):
+        """Initialize FileSampler with parallel processing configuration.
+        
+        Args:
+            seed: Random seed for reproducible sampling.
+            num_workers: Number of workers for parallel processing.
+            show_progress: Whether to show progress bars.
+        """
+        self.processor = create_batch_processor(
+            num_workers=num_workers or config.max_workers,
+            show_progress=show_progress if show_progress is not None else config.show_progress
+        )
+        
         if seed is not None:
             random.seed(seed)
     
@@ -101,13 +116,9 @@ class FileSampler:
                 return dst_file
             return None
         
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_file = {executor.submit(copy_file_task, sf): sf for sf in sampled_files}
-            
-            for future in concurrent.futures.as_completed(future_to_file):
-                result = future.result()
-                if result:
-                    copied_files.append(result)
+        # Use batch processor with progress bar
+        results = self.processor.process_files(sampled_files, copy_file_task, "Copying files")
+        copied_files = [result for result in results if result is not None]
         
         return copied_files
     

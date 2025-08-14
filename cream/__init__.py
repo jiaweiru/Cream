@@ -7,15 +7,15 @@ It serves as the main entry point for all Cream functionality.
 Example:
     Basic usage example:
         
-        from cream import AudioSeparator, TextNormalizer
+        from cream import AudioProcessor, TextProcessor
         
         # Audio processing
-        separator = AudioSeparator()
-        separated_files = separator.separate_file(input_path, output_dir, "uvr")
+        processor = AudioProcessor(method="uvr_separation")
+        result = processor.process_file(input_path, output_path)
         
         # Text processing  
-        normalizer = TextNormalizer()
-        clean_text = normalizer.apply_normalization(text, "basic")
+        processor = TextProcessor(method="basic_normalization")
+        result = processor.process_file(input_path, output_path)
 
 Attributes:
     __version__ (str): Package version.
@@ -40,25 +40,16 @@ from .core.exceptions import (
     ValidationError
 )
 
-# Audio processing
-from .audio.processing.resample import AudioResampler
-from .audio.processing.segmentation import AudioSegmenter
-from .audio.processing.normalization import AudioNormalizer
-
-# Audio analysis
-from .audio.analysis.mos import MOSEvaluator
-from .audio.analysis.intelligibility import IntelligibilityEvaluator
-from .audio.analysis.similarity import SpeakerAnalyzer
-from .audio.analysis.duration_stats import DurationAnalyzer
-from .audio.analysis.acoustic_frontend import AudioSeparator, AudioEnhancer
-
-# Text processing
-from .text.normalization import TextNormalizer
-from .text.stats import TextStatistics
+# Unified processing interfaces
+from .audio.audio_processor import AudioProcessor
+from .text.text_processor import TextProcessor
 
 # Utilities
 from .utils.file_ops import FileSampler
 from .utils.indexing import IndexMatcher
+
+# Core processing framework
+from .core.processor import processor_registry, BaseProcessor
 
 __all__ = [
     # Core
@@ -69,24 +60,15 @@ __all__ = [
     "ModelNotAvailableError",
     "ValidationError",
     
-    # Audio processing
-    "AudioResampler",
-    "AudioSegmenter", 
-    "AudioNormalizer",
-    
-    # Audio analysis
-    "MOSEvaluator",
-    "IntelligibilityEvaluator",
-    "SpeakerAnalyzer",
-    "DurationAnalyzer",
-    "AudioSeparator",
-    "AudioEnhancer",
-    
-    # Text processing
-    "TextNormalizer",
-    "TextStatistics",
+    # Processing interfaces
+    "AudioProcessor",
+    "TextProcessor",
     
     # Utilities
     "FileSampler",
     "IndexMatcher",
+    
+    # Core framework
+    "processor_registry",
+    "BaseProcessor",
 ]

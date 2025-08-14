@@ -1,5 +1,13 @@
-"""Audio processing and analysis module.
+"""Audio processing module.
 
-This module contains audio processing and analysis submodules.
-For direct access to classes, import from the main cream package.
+This module provides audio processing capabilities including separation,
+enhancement, basic processing, and analysis.
 """
+
+from .audio_processor import AudioProcessor
+
+# Import templates to trigger registration
+from . import analysis
+from . import processing
+
+__all__ = ["AudioProcessor"]

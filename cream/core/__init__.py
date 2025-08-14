@@ -1,23 +1,27 @@
-"""Core module."""
+"""Core framework components.
+
+This module provides the core framework for audio and text processing,
+including configuration management, processors, parallel processing,
+and exception handling.
+"""
 
 from .config import config
 from .exceptions import (
-    CreamError,
     AudioProcessingError,
-    InvalidFormatError, 
+    CreamError, 
+    InvalidFormatError,
     ModelNotAvailableError,
-    ValidationError
+    ValidationError,
 )
-from .logging import logger, setup, get_logger
+from .processor import BaseProcessor, processor_registry
 
 __all__ = [
     "config",
     "CreamError",
-    "AudioProcessingError",
+    "AudioProcessingError", 
     "InvalidFormatError",
     "ModelNotAvailableError", 
     "ValidationError",
-    "logger",
-    "setup", 
-    "get_logger"
+    "BaseProcessor",
+    "processor_registry",
 ]
