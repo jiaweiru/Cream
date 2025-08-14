@@ -6,10 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Cream is an audio and text processing toolkit that provides comprehensive tools for audio analysis, processing, and manipulation. It's built as a Python package with a CLI interface using Typer and Rich for enhanced console output.
 
-## Python Version Requirement
-
-This codebase requires Python 3.10+ due to the use of modern type annotations (union types with `|` operator). The current system Python 3.9.6 will cause TypeErrors. Development should use Python 3.10 or later.
-
 ## CLI Usage
 
 The main entry point is through the `cream` CLI command:
