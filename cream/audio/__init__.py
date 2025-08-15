@@ -6,8 +6,7 @@ enhancement, basic processing, and analysis.
 
 from .audio_processor import AudioProcessor
 
-# Import templates to trigger registration
-from . import analysis
-from . import processing
+from . import analysis  # noqa: F401
+from . import processing  # noqa: F401
 
 __all__ = ["AudioProcessor"]

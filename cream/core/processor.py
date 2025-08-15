@@ -90,43 +90,12 @@ class BaseProcessor(ABC):
                 return process_wrapper(f)
         
         # Get processing configuration
-        proc_config = config.get_processor_config()
-        processor = ParallelProcessor(num_workers or proc_config['max_workers'])
+        processor = ParallelProcessor(num_workers or config.max_workers)
         description = f"Processing with {self.__class__.__name__}"
         
         return processor.process_batch(input_files, wrapper_func, description)
 
 
-class BaseAudioProcessor(BaseProcessor):
-    """Base class for audio processors."""
-    
-    SUPPORTED_FORMATS = {'.wav', '.mp3', '.flac', '.m4a', '.ogg', '.wma'}
-    
-    def validate_input(self, input_path: Path) -> None:
-        """Validate audio input file."""
-        super().validate_input(input_path)
-        
-        if input_path.suffix.lower() not in self.SUPPORTED_FORMATS:
-            raise ValidationError(
-                f"Unsupported audio format: {input_path.suffix}. "
-                f"Supported formats: {sorted(self.SUPPORTED_FORMATS)}"
-            )
-
-
-class BaseTextProcessor(BaseProcessor):
-    """Base class for text processors."""
-    
-    SUPPORTED_FORMATS = {'.txt', '.srt', '.vtt', '.json'}
-    
-    def validate_input(self, input_path: Path) -> None:
-        """Validate text input file."""
-        super().validate_input(input_path)
-        
-        if input_path.suffix.lower() not in self.SUPPORTED_FORMATS:
-            raise ValidationError(
-                f"Unsupported text format: {input_path.suffix}. "
-                f"Supported formats: {sorted(self.SUPPORTED_FORMATS)}"
-            )
 
 
 class ProcessorRegistry:

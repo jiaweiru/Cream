@@ -22,9 +22,7 @@ Example:
 Classes:
     CreamError: Base exception class for all cream-related errors.
     AudioProcessingError: Raised when audio processing operations fail.
-    ModelNotAvailableError: Raised when a requested AI model is not available.
-    InvalidFormatError: Raised when a file format is not supported.
-    FileNotFoundError: Raised when a required file cannot be found.
+    TextProcessingError: Raised when text processing operations fail.
     ValidationError: Raised when input validation fails.
 """
 
@@ -71,69 +69,23 @@ class AudioProcessingError(CreamError):
     pass
 
 
-class ModelNotAvailableError(CreamError):
-    """Raised when a requested AI model is not available or cannot be loaded.
+class TextProcessingError(CreamError):
+    """Raised when text processing operations fail.
     
-    This exception is raised when attempting to use an AI model (MOS, ASR, VAD, etc.)
-    that is not properly configured, not downloaded, or cannot be loaded due to
-    missing dependencies or incompatible versions.
-    
-    Args:
-        message: Descriptive error message explaining which model is unavailable.
-        
-    Example:
-        Handling model availability errors:
-        
-        >>> try:
-        ...     load_mos_model("nisqa")
-        ... except ModelNotAvailableError as e:
-        ...     print(f"Model not available: {e}")
-    """
-    pass
-
-
-class InvalidFormatError(CreamError):
-    """Raised when a file format is not supported by the cream package.
-    
-    This exception is raised when attempting to process files with unsupported
-    formats or extensions. The cream package supports specific audio and text
-    formats as defined in the configuration.
+    This exception is raised when any text processing operation encounters
+    an error, such as normalization failures, translation issues, analysis
+    problems, or text format conversion errors.
     
     Args:
-        message: Descriptive error message indicating the unsupported format.
+        message: Descriptive error message explaining what went wrong.
         
     Example:
-        Handling unsupported file format errors:
+        Handling text processing errors:
         
         >>> try:
-        ...     process_file("document.pdf")
-        ... except InvalidFormatError as e:
-        ...     print(f"Unsupported format: {e}")
-    """
-    pass
-
-
-class FileNotFoundError(CreamError):
-    """Raised when a required file cannot be found.
-    
-    This exception is raised when the cream package cannot locate a file that
-    is required for processing, such as input audio files, configuration files,
-    or model files.
-    
-    Note:
-        This overrides Python's built-in FileNotFoundError to provide cream-specific
-        error handling while maintaining the same semantic meaning.
-        
-    Args:
-        message: Descriptive error message indicating which file was not found.
-        
-    Example:
-        Handling file not found errors:
-        
-        >>> try:
-        ...     load_audio("missing_file.wav")
-        ... except FileNotFoundError as e:
-        ...     print(f"File not found: {e}")
+        ...     normalize_text("invalid_content")
+        ... except TextProcessingError as e:
+        ...     print(f"Failed to process text: {e}")
     """
     pass
 

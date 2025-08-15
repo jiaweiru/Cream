@@ -18,19 +18,17 @@ class FileSampler:
     def __init__(
         self, 
         seed: int | None = None, 
-        num_workers: int | None = None,
-        show_progress: bool | None = None
+        num_workers: int | None = None
     ):
         """Initialize FileSampler with parallel processing configuration.
         
         Args:
             seed: Random seed for reproducible sampling.
             num_workers: Number of workers for parallel processing.
-            show_progress: Whether to show progress bars.
         """
         self.processor = create_batch_processor(
             num_workers=num_workers or config.max_workers,
-            show_progress=show_progress if show_progress is not None else config.show_progress
+            show_progress=True  # Always show progress as per CLAUDE.md
         )
         
         if seed is not None:

@@ -6,15 +6,15 @@ It serves as the main entry point for all Cream functionality.
 
 Example:
     Basic usage example:
-        
-        from cream import AudioProcessor, TextProcessor
-        
+
+        from cream import AudioProcessorInterface, TextProcessorInterface
+
         # Audio processing
-        processor = AudioProcessor(method="uvr_separation")
+        processor = AudioProcessorInterface(method="uvr_separation")
         result = processor.process_file(input_path, output_path)
-        
-        # Text processing  
-        processor = TextProcessor(method="basic_normalization")
+
+        # Text processing
+        processor = TextProcessorInterface(method="basic_normalization")
         result = processor.process_file(input_path, output_path)
 
 Attributes:
@@ -35,14 +35,13 @@ from .core.config import config
 from .core.exceptions import (
     CreamError,
     AudioProcessingError,
-    InvalidFormatError,
-    ModelNotAvailableError,
-    ValidationError
+    TextProcessingError,
+    ValidationError,
 )
 
 # Unified processing interfaces
-from .audio.audio_processor import AudioProcessor
-from .text.text_processor import TextProcessor
+from .audio.audio_processor import AudioProcessorInterface
+from .text.text_processor import TextProcessorInterface
 
 # Utilities
 from .utils.file_ops import FileSampler
@@ -53,21 +52,18 @@ from .core.processor import processor_registry, BaseProcessor
 
 __all__ = [
     # Core
+    "setup",
     "config",
     "CreamError",
-    "AudioProcessingError", 
-    "InvalidFormatError",
-    "ModelNotAvailableError",
+    "AudioProcessingError",
+    "TextProcessingError",
     "ValidationError",
-    
     # Processing interfaces
-    "AudioProcessor",
-    "TextProcessor",
-    
+    "AudioProcessorInterface",
+    "TextProcessorInterface",
     # Utilities
     "FileSampler",
     "IndexMatcher",
-    
     # Core framework
     "processor_registry",
     "BaseProcessor",

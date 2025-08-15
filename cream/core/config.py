@@ -16,23 +16,6 @@ Classes:
 """
 
 from pathlib import Path
-import os
-
-
-class ProcessingConfig:
-    """Configuration for processing operations."""
-    
-    def __init__(self):
-        self.max_workers = 1  # Default to single worker
-        self.show_progress = True
-        self.timeout_seconds = 300  # 5 minutes default timeout
-        self.enable_logging = True
-        
-    def update(self, **kwargs):
-        """Update configuration values."""
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
 
 
 class Config:
@@ -76,7 +59,7 @@ class Config:
         self.model_dir = self.config_dir / "models"
         self.model_dir.mkdir(parents=True, exist_ok=True)
 
-        # Default configurations
+        # Supported file formats
         self.audio_formats = [
             ".wav",
             ".flac",
@@ -87,200 +70,10 @@ class Config:
             ".aiff",
             ".ac3",
         ]
-        self.text_formats = [".txt", ".json", ".csv"]
+        self.text_formats = [".txt", ".csv"]
 
-        self.models = {
-            "asr": {
-                "paraformer-zh": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "funasr",
-                    "description": "Chinese Paraformer ASR model from FunASR toolkit",
-                    "project_url": "https://github.com/modelscope/FunASR",
-                    "paper": "https://arxiv.org/abs/2206.08317",
-                },
-            },
-            "vad": {
-                "funasr-vad": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "funasr",
-                    "description": "FunASR FSMN-VAD model for voice activity detection",
-                    "project_url": "https://github.com/modelscope/FunASR",
-                    "paper": "https://arxiv.org/abs/2305.11013",
-                },
-            },
-            "speaker": {
-                "3d-speaker-cam++": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "modelscope",
-                    "description": "3D-Speaker CAM++ model for speaker recognition via ModelScope",
-                    "project_url": "https://github.com/alibaba-damo-academy/3D-Speaker",
-                    "paper": "https://arxiv.org/abs/2306.15354",
-                },
-                "3d-speaker-eres2netv2": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "modelscope",
-                    "description": "3D-Speaker ERes2NetV2 model for speaker recognition via ModelScope",
-                    "project_url": "https://github.com/alibaba-damo-academy/3D-Speaker",
-                    "paper": "https://arxiv.org/abs/2306.15354",
-                },
-            },
-            "separation": {
-                "audio-separator-vr": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "audio-separator",
-                    "description": "VR architecture model from python-audio-separator",
-                    "project_url": "https://github.com/nomadkaraoke/python-audio-separator",
-                    "paper": "https://arxiv.org/abs/2210.01448",
-                },
-                "audio-separator-mdx": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "audio-separator",
-                    "description": "MDX-Net architecture model from python-audio-separator",
-                    "project_url": "https://github.com/nomadkaraoke/python-audio-separator",
-                    "paper": "https://arxiv.org/abs/2108.13187",
-                },
-                "audio-separator-htdemucs": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "audio-separator",
-                    "description": "HT-Demucs architecture model from python-audio-separator",
-                    "project_url": "https://github.com/nomadkaraoke/python-audio-separator",
-                    "paper": "https://arxiv.org/abs/2110.09456",
-                },
-            },
-            "enhancement": {
-                "frcrn": {
-                    "path": "",
-                    "enabled": False,
-                    "model_type": "toolkit",
-                    "toolkit": "modelscope",
-                    "description": "FRCRN speech denoising model from ClearerVoice-Studio via ModelScope",
-                    "project_url": "https://github.com/modelscope/ClearerVoice-Studio",
-                    "paper": "https://arxiv.org/abs/2409.07856",
-                },
-            },
-        }
-
-        # Processing defaults
-        self.processing = ProcessingConfig()
-        
-        # Legacy compatibility
-        self.max_workers = self.processing.max_workers
-        self.show_progress = self.processing.show_progress
-
-    def get_model_config(
-        self, category: str, model_name: str
-    ) -> dict[str, str | bool | int | list]:
-        """Get configuration for a specific AI model.
-
-        Retrieves the configuration dictionary for the specified model within
-        the given category. Returns an empty dictionary if the category or
-        model is not found.
-
-        Args:
-            category: Model category (e.g., "mos", "asr", "vad", "speaker", "separation", "enhancement").
-            model_name: Specific model name within the category.
-
-        Returns:
-            Dictionary containing model configuration with keys:
-            - 'path': Model file path or identifier
-            - 'enabled': Whether the model is enabled
-            - 'model_type': Type of model ("official" or "toolkit")
-            - 'toolkit': Toolkit name (for toolkit models only)
-            - 'description': Human-readable description
-            - 'project_url': Official project repository URL
-            - 'paper': Research paper URL or DOI
-            Returns empty dict if category or model not found.
-
-        Example:
-            >>> config = Config()
-            >>> config.get_model_config("asr", "paraformer-zh")
-            {'path': '', 'enabled': False, 'model_type': 'official', ...}
-            >>> config.get_model_config("invalid", "model")
-            {}
-        """
-        return self.models.get(category, {}).get(model_name, {})
-
-    def get_available_models(self, category: str) -> list[str]:
-        """Get list of available (enabled) models for a category.
-
-        Args:
-            category: Model category to check.
-
-        Returns:
-            List of enabled model names.
-
-        Example:
-            >>> config = Config()
-            >>> config.get_available_models("separation")
-            []  # Empty if no models are enabled
-        """
-        category_models = self.models.get(category, {})
-        return [
-            model_name
-            for model_name, config_dict in category_models.items()
-            if config_dict.get("enabled", False)
-        ]
-
-    def get_models_by_type(self, category: str, model_type: str) -> list[str]:
-        """Get list of models by type for a category.
-
-        Args:
-            category: Model category to check.
-            model_type: Model type ("official" or "toolkit").
-
-        Returns:
-            List of model names matching the specified type.
-
-        Example:
-            >>> config = Config()
-            >>> config.get_models_by_type("separation", "toolkit")
-            ['audio-separator-vr', 'audio-separator-mdx', 'audio-separator-htdemucs']
-        """
-        category_models = self.models.get(category, {})
-        return [
-            model_name
-            for model_name, config_dict in category_models.items()
-            if config_dict.get("model_type") == model_type
-        ]
-
-    def get_toolkit_models(self, toolkit_name: str) -> dict[str, list[str]]:
-        """Get all models that use a specific toolkit.
-
-        Args:
-            toolkit_name: Name of the toolkit to search for.
-
-        Returns:
-            Dictionary mapping category names to lists of model names using the toolkit.
-
-        Example:
-            >>> config = Config()
-            >>> config.get_toolkit_models("audio-separator")
-            {'separation': ['audio-separator-vr', 'audio-separator-mdx', 'audio-separator-htdemucs']}
-        """
-        result = {}
-        for category, models in self.models.items():
-            toolkit_models = [
-                model_name
-                for model_name, config_dict in models.items()
-                if config_dict.get("toolkit") == toolkit_name
-            ]
-            if toolkit_models:
-                result[category] = toolkit_models
-        return result
+        # Processing configuration
+        self.max_workers = 1  # Default to single worker
 
     def is_audio_file(self, path: Path) -> bool:
         """Check if a file has a supported audio format extension.
@@ -325,47 +118,15 @@ class Config:
             False
         """
         return path.suffix.lower() in self.text_formats
-    
-    def set_parallel_config(self, num_workers: int | None = None, show_progress: bool | None = None) -> None:
+
+    def set_parallel_config(self, num_workers: int | None = None) -> None:
         """Set parallel processing configuration.
-        
+
         Args:
             num_workers: Number of workers. If None, keeps current setting.
-            show_progress: Whether to show progress bars. If None, keeps current setting.
         """
-        update_dict = {}
         if num_workers is not None:
-            update_dict['max_workers'] = num_workers
-            self.max_workers = num_workers  # Legacy compatibility
-        if show_progress is not None:
-            update_dict['show_progress'] = show_progress
-            self.show_progress = show_progress  # Legacy compatibility
-        
-        if update_dict:
-            self.processing.update(**update_dict)
-    
-    def get_processor_config(self, processor_type: str = None) -> dict[str, str | int | float | bool]:
-        """Get configuration for processors.
-        
-        Args:
-            processor_type: Optional processor type for specific config.
-            
-        Returns:
-            Dictionary with processor configuration.
-        """
-        base_config = {
-            'max_workers': self.processing.max_workers,
-            'show_progress': self.processing.show_progress,
-            'timeout_seconds': self.processing.timeout_seconds,
-            'enable_logging': self.processing.enable_logging
-        }
-        
-        # Add processor-specific config if needed
-        if processor_type:
-            processor_specific = getattr(self, f"{processor_type}_config", {})
-            base_config.update(processor_specific)
-        
-        return base_config
+            self.max_workers = num_workers
 
 
 config = Config()

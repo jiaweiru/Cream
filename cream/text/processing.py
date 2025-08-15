@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
-from cream.core.processor import BaseTextProcessor, processor_registry
-from cream.core.exceptions import CreamError
+from cream.core.processor import processor_registry
+from cream.text.text_processor import BaseTextProcessor
+from cream.core.exceptions import TextProcessingError
 
 
 # Text Normalization Processor Example
@@ -15,7 +16,7 @@ class BasicTextNormalizer(BaseTextProcessor):
         self.validate_input(input_path)
         
         # Template implementation - replace with actual normalization logic
-        raise CreamError("Basic text normalizer not implemented - add your normalization logic here")
+        raise TextProcessingError("Basic text normalizer not implemented - add your normalization logic here")
 
 
 # Text Transformation Processor Example
@@ -27,7 +28,7 @@ class TextTranslator(BaseTextProcessor):
         self.validate_input(input_path)
         
         # Template implementation - replace with actual translation logic
-        raise CreamError("Text translator not implemented - add your translation logic here")
+        raise TextProcessingError("Text translator not implemented - add your translation logic here")
 
 
 # Register processors

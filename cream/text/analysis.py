@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
-from cream.core.processor import BaseTextProcessor, processor_registry
-from cream.core.exceptions import CreamError
+from cream.core.processor import processor_registry
+from cream.text.text_processor import BaseTextProcessor
+from cream.core.exceptions import TextProcessingError
 
 
 # Text Analysis Processor Example
@@ -15,7 +16,7 @@ class TextStatisticsAnalyzer(BaseTextProcessor):
         self.validate_input(input_path)
         
         # Template implementation - replace with actual statistics logic
-        raise CreamError("Text statistics analyzer not implemented - add your analysis logic here")
+        raise TextProcessingError("Text statistics analyzer not implemented - add your analysis logic here")
 
 
 # Register processor

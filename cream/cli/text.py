@@ -4,7 +4,7 @@ import typer
 from pathlib import Path
 from rich.console import Console
 
-from cream.text.text_processor import TextProcessor
+from cream.text.text_processor import TextProcessorInterface
 
 console = Console()
 app = typer.Typer(help="Text processing commands")
@@ -23,7 +23,7 @@ def process_text(
     console.print(f"[green]Processing text using {method}[/green]")
     
     try:
-        processor = TextProcessor(method=method)
+        processor = TextProcessorInterface(method=method)
         result = processor.process_file(input_file, output_file)
         console.print(f"[blue]Processing completed: {result}[/blue]")
         
@@ -37,7 +37,7 @@ def list_methods():
     """List available text processing methods."""
     console.print("[green]Available text processing methods:[/green]")
     
-    methods = TextProcessor.list_all_methods()
+    methods = TextProcessorInterface.list_all_methods()
     
     console.print("\n[bold]Normalization methods:[/bold]")
     for method in methods["normalization"]:

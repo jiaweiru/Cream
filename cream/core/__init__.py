@@ -8,9 +8,8 @@ and exception handling.
 from .config import config
 from .exceptions import (
     AudioProcessingError,
-    CreamError, 
-    InvalidFormatError,
-    ModelNotAvailableError,
+    CreamError,
+    TextProcessingError,
     ValidationError,
 )
 from .processor import BaseProcessor, processor_registry
@@ -18,9 +17,8 @@ from .processor import BaseProcessor, processor_registry
 __all__ = [
     "config",
     "CreamError",
-    "AudioProcessingError", 
-    "InvalidFormatError",
-    "ModelNotAvailableError", 
+    "AudioProcessingError",
+    "TextProcessingError", 
     "ValidationError",
     "BaseProcessor",
     "processor_registry",

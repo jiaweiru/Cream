@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-from cream.core.processor import processor_registry
+from cream.core.processor import BaseProcessor, processor_registry
+from cream.core.exceptions import ValidationError
 from cream.core.logging import get_logger
 
 # Import processing methods to trigger registration
@@ -11,7 +12,23 @@ from . import processing, analysis
 logger = get_logger(__name__)
 
 
-class TextProcessor:
+class BaseTextProcessor(BaseProcessor):
+    """Base class for text processors."""
+    
+    SUPPORTED_FORMATS = {'.txt', '.srt', '.vtt', '.json'}
+    
+    def validate_input(self, input_path: Path) -> None:
+        """Validate text input file."""
+        super().validate_input(input_path)
+        
+        if input_path.suffix.lower() not in self.SUPPORTED_FORMATS:
+            raise ValidationError(
+                f"Unsupported text format: {input_path.suffix}. "
+                f"Supported formats: {sorted(self.SUPPORTED_FORMATS)}"
+            )
+
+
+class TextProcessorInterface:
     """Unified text processor interface for all text operations."""
     
     def __init__(self, method: str, config: dict[str, str | int | float | bool] = None):
