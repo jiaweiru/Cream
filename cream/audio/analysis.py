@@ -2,26 +2,23 @@
 
 from pathlib import Path
 
-from cream.core.processor import processor_registry
+from cream.core.processor import register_processor
 from cream.audio.audio_processor import BaseAudioProcessor
 from cream.core.exceptions import AudioProcessingError
 
 
 # Audio Analysis Processor Example
+@register_processor("mos_evaluator")
 class MOSEvaluator(BaseAudioProcessor):
     """MOS (Mean Opinion Score) evaluator - Template Implementation."""
 
     def process_single(
-        self, input_path: Path, output_path: Path = None, **kwargs
+        self, input_path: Path, output_path: Path | None = None, **kwargs
     ) -> dict[str, float]:
         """Evaluate MOS score - Template Implementation."""
         self.validate_input(input_path)
 
         # Template implementation - replace with actual model code
-        raise AudioProcessingError(
-            "MOS evaluator not implemented - add your model integration here"
-        )
-
-
-# Register processor
-processor_registry.register("mos_evaluator", MOSEvaluator)
+        error_msg = "MOS evaluator not implemented - add your model integration here"
+        self.logger.error(error_msg)
+        raise AudioProcessingError(error_msg)

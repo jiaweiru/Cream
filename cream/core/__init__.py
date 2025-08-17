@@ -18,7 +18,7 @@ __all__ = [
     "config",
     "CreamError",
     "AudioProcessingError",
-    "TextProcessingError", 
+    "TextProcessingError",
     "ValidationError",
     "BaseProcessor",
     "processor_registry",

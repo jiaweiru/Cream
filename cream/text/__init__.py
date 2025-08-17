@@ -6,8 +6,8 @@ analysis, and other text operations.
 
 from .text_processor import TextProcessor
 
-# Import templates to trigger registration  
-from . import analysis
-from . import processing
+# Import templates to trigger registration
+from . import analysis  # noqa: F401
+from . import processing  # noqa: F401
 
 __all__ = ["TextProcessor"]

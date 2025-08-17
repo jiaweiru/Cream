@@ -5,6 +5,7 @@ from pathlib import Path
 from cream.core.processor import BaseProcessor, processor_registry
 from cream.core.exceptions import ValidationError
 from cream.core.logging import get_logger
+from cream.core.config import config
 
 from . import processing  # noqa: F401
 from . import analysis  # noqa: F401
@@ -14,24 +15,28 @@ logger = get_logger(__name__)
 
 class BaseAudioProcessor(BaseProcessor):
     """Base class for audio processors."""
-    
-    SUPPORTED_FORMATS = {'.wav', '.mp3', '.flac', '.m4a', '.ogg', '.wma'}
-    
+
+    @property
+    def SUPPORTED_FORMATS(self):
+        """Get supported audio formats from config."""
+        return set(config.audio_formats)
+
     def validate_input(self, input_path: Path) -> None:
         """Validate audio input file."""
         super().validate_input(input_path)
-        
+
         if input_path.suffix.lower() not in self.SUPPORTED_FORMATS:
-            raise ValidationError(
-                f"Unsupported audio format: {input_path.suffix}. "
-                f"Supported formats: {sorted(self.SUPPORTED_FORMATS)}"
-            )
+            error_msg = f"Unsupported audio format: {input_path.suffix}. Supported formats: {sorted(self.SUPPORTED_FORMATS)}"
+            logger.error(error_msg)
+            raise ValidationError(error_msg)
 
 
 class AudioProcessorInterface:
     """Unified audio processor interface for all audio operations."""
 
-    def __init__(self, method: str, config: dict[str, str | int | float | bool] = None):
+    def __init__(
+        self, method: str, config: dict[str, str | int | float | bool] | None = None
+    ):
         """Initialize audio processor.
 
         Args:
@@ -42,35 +47,18 @@ class AudioProcessorInterface:
         self.processor = processor_registry.create(method, config)
 
     @classmethod
-    def list_all_methods(cls) -> dict[str, list[str]]:
-        """Get all available methods grouped by category."""
-        all_methods = processor_registry.list_processors()
+    def list_all_methods(cls) -> list[str]:
+        """Get all available audio processing methods."""
+        return processor_registry.list_processors()
 
-        return {
-            "separation": [
-                m for m in all_methods if "separator" in m or "spleeter" in m
-            ],
-            "enhancement": [m for m in all_methods if "enhancer" in m],
-            "basic_processing": [
-                m
-                for m in all_methods
-                if any(x in m for x in ["resampler", "normalizer", "segmenter"])
-            ],
-            "analysis": [
-                m
-                for m in all_methods
-                if any(x in m for x in ["evaluator", "analyzer", "asr", "vad"])
-            ],
-        }
-
-    def process_file(self, input_path: Path, output_path: Path = None, **kwargs):
+    def process_file(self, input_path: Path, output_path: Path | None = None, **kwargs):
         """Process a single audio file."""
         return self.processor.process_single(input_path, output_path, **kwargs)
 
     def process_batch(
         self,
         input_files: list[Path],
-        output_dir: Path = None,
+        output_dir: Path | None = None,
         num_workers: int = 1,
         **kwargs,
     ):

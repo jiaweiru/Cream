@@ -69,8 +69,9 @@ class Config:
             ".m4a",
             ".aiff",
             ".ac3",
+            ".wma",
         ]
-        self.text_formats = [".txt", ".csv"]
+        self.text_formats = [".txt", ".csv", ".srt", ".vtt", ".json"]
 
         # Processing configuration
         self.max_workers = 1  # Default to single worker
