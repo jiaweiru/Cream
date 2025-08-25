@@ -43,9 +43,9 @@ class ParallelProcessor:
             with create_progress() as progress:
                 task_progress = progress.add_task(description, total=len(tasks))
 
-                # Use pool.imap for real-time progress tracking
+                # Use pool.imap_unordered for real-time progress tracking
                 results = []
-                for result in pool.imap(worker_func, tasks):
+                for result in pool.imap_unordered(worker_func, tasks):
                     results.append(result)
                     progress.update(task_progress, advance=1)
 
