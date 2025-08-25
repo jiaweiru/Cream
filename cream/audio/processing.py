@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+import librosa
+import soundfile as sf
+
 from cream.core.processor import register_processor
 from cream.audio.audio_processor import BaseAudioProcessor
 from cream.core.exceptions import AudioProcessingError
@@ -41,18 +44,17 @@ class FRCRNEnhancer(BaseAudioProcessor):
         raise AudioProcessingError(error_msg)
 
 
-# Basic Audio Processing Example
 @register_processor("audio_resampler")
 class AudioResampler(BaseAudioProcessor):
-    """Audio resampler - Template Implementation."""
-
     def process_single(
         self, input_path: Path, output_path: Path | None = None, **kwargs
     ) -> Path:
-        """Resample audio to target sample rate - Template Implementation."""
+        """Resample audio to target sample rate."""
         self.validate_input(input_path)
 
-        # Template implementation - replace with actual resampling code
-        error_msg = "Audio resampler not implemented - add your resampling logic here"
-        self.logger.error(error_msg)
-        raise AudioProcessingError(error_msg)
+        output_path = output_path or input_path
+        target_sr = kwargs["target_sr"]
+
+        y, sr = librosa.load(input_path, sr=target_sr)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        sf.write(output_path, y, sr)
