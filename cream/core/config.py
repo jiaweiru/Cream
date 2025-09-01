@@ -12,122 +12,134 @@ Example:
     True
 
 Classes:
-    Config: Global configuration manager with file format checking and model configs.
+    CreamConfig: Global configuration manager with file format checking and model configs.
 """
 
 from pathlib import Path
+from dataclasses import dataclass, field
+
+from .logging import get_logger
+
+logger = get_logger(__name__)
 
 
-class Config:
-    """Global configuration manager for the cream package.
-
-    This class manages all configuration settings including supported file formats,
-    model configurations, processing defaults, and user-specific directories.
-    It automatically creates a configuration directory in the user's home folder
-    and provides methods to check file formats and retrieve model configurations.
-
-    Attributes:
-        home_dir (Path): User's home directory path.
-        config_dir (Path): Cream configuration directory (~/.cream).
-        audio_formats (list[str]): List of supported audio file extensions.
-        text_formats (list[str]): List of supported text file extensions.
-        models (dict): Configuration for AI models (ASR, VAD, Speaker, Separation, Enhancement).
-        max_workers (int): Maximum number of worker threads for parallel processing.
-
-    Example:
-        Creating and using a configuration instance:
-
-        >>> config = Config()
-        >>> config.is_audio_file(Path("test.wav"))
-        True
-        >>> config.get_model_config("asr", "paraformer-zh")
-        {'path': '', 'enabled': False, 'model_type': 'toolkit', ...}
+@dataclass
+class CreamConfig:
+    """Central configuration for Cream application.
+    
+    This dataclass manages all configuration settings including supported file formats,
+    processing parameters, directory paths, and logging settings.
     """
-
-    def __init__(self) -> None:
-        """Initialize the configuration manager.
-
-        Sets up default configurations, creates the config directory if it doesn't
-        exist, and initializes all default values for audio formats, text formats,
-        model configurations, and processing parameters.
-
-        The configuration directory is created at ~/.cream and will be used for
-        storing user-specific settings and cached model files in the future.
-        """
-        self.home_dir = Path.home()
+    
+    # Directory settings
+    home_dir: Path = field(default_factory=Path.home)
+    config_dir: Path = field(init=False)
+    model_dir: Path = field(init=False)
+    
+    # File format settings
+    audio_formats: list[str] = field(default_factory=lambda: [
+        ".wav", ".flac", ".mp3", ".ogg", ".opus", 
+        ".m4a", ".aiff", ".ac3", ".wma"
+    ])
+    text_formats: list[str] = field(default_factory=lambda: [
+        ".txt", ".csv", ".srt", ".vtt", ".json"
+    ])
+    
+    # Processing settings
+    max_workers: int = 1
+    enable_progress_bars: bool = True
+    
+    # Logging settings
+    log_level: str = "INFO"
+    log_file: str | None = None
+    
+    def __post_init__(self):
+        """Initialize derived paths and validate configuration after initialization."""
         self.config_dir = self.home_dir / ".cream"
         self.model_dir = self.config_dir / "models"
         self.model_dir.mkdir(parents=True, exist_ok=True)
+        self.validate_config()
 
-        # Supported file formats
-        self.audio_formats = [
-            ".wav",
-            ".flac",
-            ".mp3",
-            ".ogg",
-            ".opus",
-            ".m4a",
-            ".aiff",
-            ".ac3",
-            ".wma",
-        ]
-        self.text_formats = [".txt", ".csv", ".srt", ".vtt", ".json"]
+    def validate_config(self) -> None:
+        """Validate configuration settings."""
+        if self.max_workers < 1:
+            logger.warning(f"max_workers must be >= 1, got {self.max_workers}. Setting to 1.")
+            self.max_workers = 1
+            
+        if self.log_file and not Path(self.log_file).parent.exists():
+            logger.warning(f"Log file parent directory does not exist: {self.log_file}")
 
-        # Processing configuration
-        self.max_workers = 1  # Default to single worker
+    def validate_directories(self) -> None:
+        """Validate and ensure required directories exist."""
+        try:
+            self.model_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"Ensured model directory exists: {self.model_dir}")
+        except Exception as e:
+            logger.error(f"Failed to create model directory: {e}")
 
     def is_audio_file(self, path: Path) -> bool:
         """Check if a file has a supported audio format extension.
-
-        Compares the file extension (case-insensitive) against the list of
-        supported audio formats defined in self.audio_formats.
 
         Args:
             path: Path object representing the file to check.
 
         Returns:
-            True if the file extension is in the supported audio formats list,
-            False otherwise.
-
-        Example:
-            >>> config = Config()
-            >>> config.is_audio_file(Path("audio.wav"))
-            True
-            >>> config.is_audio_file(Path("document.pdf"))
-            False
+            True if the file extension is in the supported audio formats list.
         """
         return path.suffix.lower() in self.audio_formats
 
     def is_text_file(self, path: Path) -> bool:
         """Check if a file has a supported text format extension.
 
-        Compares the file extension (case-insensitive) against the list of
-        supported text formats defined in self.text_formats.
-
         Args:
             path: Path object representing the file to check.
 
         Returns:
-            True if the file extension is in the supported text formats list,
-            False otherwise.
-
-        Example:
-            >>> config = Config()
-            >>> config.is_text_file(Path("data.txt"))
-            True
-            >>> config.is_text_file(Path("audio.wav"))
-            False
+            True if the file extension is in the supported text formats list.
         """
         return path.suffix.lower() in self.text_formats
 
-    def set_parallel_config(self, num_workers: int | None = None) -> None:
+    def set_parallel_config(self, num_workers: int | None = None, enable_progress_bars: bool | None = None) -> None:
         """Set parallel processing configuration.
 
         Args:
             num_workers: Number of workers. If None, keeps current setting.
+            enable_progress_bars: Whether to show progress bars. If None, keeps current setting.
         """
         if num_workers is not None:
-            self.max_workers = num_workers
+            self.max_workers = max(1, num_workers)
+            logger.debug(f"Updated max_workers: {self.max_workers}")
+        
+        if enable_progress_bars is not None:
+            self.enable_progress_bars = enable_progress_bars
+            logger.debug(f"Updated enable_progress_bars: {self.enable_progress_bars}")
+
+    def update_from_cli_args(self, **kwargs) -> None:
+        """Update configuration from command line arguments.
+        
+        Args:
+            **kwargs: Configuration values to update.
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key) and value is not None:
+                setattr(self, key, value)
+                logger.debug(f"Updated config: {key}={value}")
+
+    @property
+    def supported_audio_formats(self) -> list[str]:
+        """Get list of supported audio formats."""
+        return self.audio_formats.copy()
+
+    @property
+    def supported_text_formats(self) -> list[str]:
+        """Get list of supported text formats."""
+        return self.text_formats.copy()
+
+    @property
+    def all_supported_formats(self) -> list[str]:
+        """Get list of all supported file formats."""
+        return self.audio_formats + self.text_formats
 
 
-config = Config()
+# Global configuration instance
+config = CreamConfig()
