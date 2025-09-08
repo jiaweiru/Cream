@@ -233,4 +233,6 @@ ehthumbs_vista.db
 *.sublime-project
 *.sublime-workspace
 .project
-.settings/
+.settings/# pixi environments
+.pixi/*
+!.pixi/config.toml

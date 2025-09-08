@@ -9,13 +9,12 @@ Example:
         $ cream --version
         $ cream audio separate input.wav output/
         $ cream text normalize input.txt output.txt
-        
+
 For help:
         $ cream --help
         $ cream audio --help
 """
 
-import os
 import typer
 from pathlib import Path
 from rich.console import Console
@@ -27,7 +26,7 @@ console = Console()
 app = typer.Typer(
     name="cream",
     help="Simple and convenient audio data analysis and processing toolkit",
-    rich_markup_mode="rich"
+    rich_markup_mode="rich",
 )
 
 app.add_typer(audio.app, name="audio", help="Audio processing and analysis commands")
@@ -37,37 +36,49 @@ app.add_typer(utils.app, name="utils", help="Utility commands")
 
 @app.callback()
 def main(
-    version: bool = typer.Option(False, "--version", "-v", help="Show version information"),
-    log_level: str = typer.Option("INFO", "--log-level", "-l", help="Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"),
+    version: bool = typer.Option(
+        False, "--version", "-v", help="Show version information"
+    ),
+    log_level: str = typer.Option(
+        "INFO",
+        "--log-level",
+        "-l",
+        help="Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    ),
     log_file: str | None = typer.Option(None, "--log-file", help="Path to log file"),
-    no_color: bool = typer.Option(False, "--no-color", help="Disable colored console output")
+    no_color: bool = typer.Option(
+        False, "--no-color", help="Disable colored console output"
+    ),
 ):
     """Cream: Simple and convenient audio data analysis and processing toolkit.
-    
+
     This is the main entry point callback that configures global settings like
     logging and handles version display.
-    
+
     Args:
         version (bool): If True, display version information and exit.
         log_level (str): Logging level to use (DEBUG, INFO, WARNING, ERROR, CRITICAL).
         log_file (str | None): Optional path to log file for output.
         no_color (bool): If True, disable colored console output.
-        
+
     Raises:
         typer.Exit: When version flag is used.
     """
     setup(
         level=log_level.upper(),
         file=Path(log_file) if log_file else None,
-        colorize=not no_color
+        colorize=not no_color,
     )
-    
+
     logger.debug(f"Starting cream CLI with log level: {log_level}")
-    
+
     if version:
         from cream import __version__
+
         logger.info("Displaying version information")
-        console.print(f"[bold green]cream[/bold green] version [blue]{__version__}[/blue]")
+        console.print(
+            f"[bold green]cream[/bold green] version [blue]{__version__}[/blue]"
+        )
         raise typer.Exit()
 
 
