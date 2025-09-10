@@ -17,13 +17,18 @@ def process_text(
     input_file: Path = typer.Argument(..., help="Input text file"),
     method: str = typer.Argument(..., help="Processing method to use"),
     output_file: Path = typer.Option(None, "--output", "-o", help="Output file"),
-    num_workers: int = typer.Option(1, "--workers", "-w", help="Number of parallel workers")
+    num_workers: int = typer.Option(1, "--workers", "-w", help="Number of parallel workers"),
+    model_path: str | None = typer.Option(None, "--model-path", help="Path to local model"),
 ):
     """Process text using any available method."""
     console.print(f"[green]Processing text using {method}[/green]")
     
     try:
-        processor = TextProcessorInterface(method=method)
+        cfg: dict[str, str] = {}
+        if model_path:
+            cfg["model_path"] = model_path
+
+        processor = TextProcessorInterface(method=method, config=cfg or None)
         result = processor.process_file(input_file, output_file)
         console.print(f"[blue]Processing completed: {result}[/blue]")
         

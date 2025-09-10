@@ -20,12 +20,17 @@ def process_audio(
     num_workers: int = typer.Option(
         1, "--workers", "-w", help="Number of parallel workers"
     ),
+    model_path: str | None = typer.Option(None, "--model-path", help="Path to local model"),
 ):
     """Process audio using any available method."""
     console.print(f"[green]Processing audio using {method}[/green]")
 
     try:
-        processor = AudioProcessorInterface(method=method)
+        cfg: dict[str, str] = {}
+        if model_path:
+            cfg["model_path"] = model_path
+
+        processor = AudioProcessorInterface(method=method, config=cfg or None)
         result = processor.process_file(input_path, output_path)
         console.print(f"[blue]Processing completed: {result}[/blue]")
 

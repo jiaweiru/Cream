@@ -12,7 +12,7 @@ from .exceptions import (
     TextProcessingError,
     ValidationError,
 )
-from .processor import BaseProcessor, processor_registry
+from .processor import BaseProcessor, ModelBackedProcessor, processor_registry
 
 __all__ = [
     "config",
@@ -21,5 +21,6 @@ __all__ = [
     "TextProcessingError",
     "ValidationError",
     "BaseProcessor",
+    "ModelBackedProcessor",
     "processor_registry",
 ]
