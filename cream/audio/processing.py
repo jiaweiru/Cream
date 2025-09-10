@@ -79,8 +79,8 @@ class AudioNormalizer(BaseAudioProcessor):
         self.validate_input(input_path)
 
         output_path = output_path or input_path
-        normalization_type = kwargs.get("normalization_type", None)
-        target_level = kwargs.get("target_level", None)
+        normalization_type = kwargs.get("normalization_type")
+        target_level = kwargs.get("target_level")
 
         # ffmpeg-normalize uses EBU loudness normalization by default
         # with a target level of -23 LUFS.
