@@ -1,12 +1,12 @@
 """Audio processing module.
 
-This module provides audio processing capabilities including separation,
-enhancement, basic processing, and analysis.
+Provides audio processing capabilities including resampling, normalization,
+and analysis. Importing submodules triggers method registration.
 """
 
-from .audio_processor import AudioProcessor
+from .audio_processor import AudioProcessorInterface, BaseAudioProcessor
 
 from . import analysis  # noqa: F401
 from . import processing  # noqa: F401
 
-__all__ = ["AudioProcessor"]
+__all__ = ["AudioProcessorInterface", "BaseAudioProcessor"]

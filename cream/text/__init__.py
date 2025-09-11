@@ -1,13 +1,13 @@
 """Text processing module.
 
-This module provides text processing capabilities including normalization,
-analysis, and other text operations.
+Provides text processing and analysis utilities. Importing submodules triggers
+method registration.
 """
 
-from .text_processor import TextProcessor
+from .text_processor import TextProcessorInterface, BaseTextProcessor
 
 # Import templates to trigger registration
 from . import analysis  # noqa: F401
 from . import processing  # noqa: F401
 
-__all__ = ["TextProcessor"]
+__all__ = ["TextProcessorInterface", "BaseTextProcessor"]
