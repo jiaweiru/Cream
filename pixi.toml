@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 python = ">=3.13.7,<3.14"
+ffmpeg = ">=8.0.0,<9"
 
 [pypi-dependencies]
 soundfile = ">=0.13.1, <0.14"
@@ -17,3 +18,4 @@ loguru = ">=0.7.3, <0.8"
 typer = ">=0.17.4, <0.18"
 rich = ">=14.1.0, <15"
 pytest = ">=8.3.2, <9"
+ffmpeg-normalize = ">=1.33.1, <2"
