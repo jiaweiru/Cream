@@ -5,6 +5,9 @@ from pathlib import Path
 from cream.core.processor import register_processor
 from cream.text.text_processor import BaseTextProcessor
 from cream.core.exceptions import TextProcessingError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 # Text Analysis Processor Example
@@ -22,5 +25,5 @@ class TextStatisticsAnalyzer(BaseTextProcessor):
         error_msg = (
             "Text statistics analyzer not implemented - add your analysis logic here"
         )
-        self.logger.error(error_msg)
+        logger.error(error_msg)
         raise TextProcessingError(error_msg)

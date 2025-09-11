@@ -5,6 +5,9 @@ from pathlib import Path
 from cream.core.processor import register_processor
 from cream.audio.audio_processor import BaseAudioProcessor
 from cream.core.exceptions import AudioProcessingError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 # Audio Analysis Processor Example
@@ -20,5 +23,5 @@ class MOSEvaluator(BaseAudioProcessor):
 
         # Template implementation - replace with actual model code
         error_msg = "MOS evaluator not implemented - add your model integration here"
-        self.logger.error(error_msg)
+        logger.error(error_msg)
         raise AudioProcessingError(error_msg)

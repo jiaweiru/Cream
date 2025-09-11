@@ -26,33 +26,42 @@ logger = get_logger(__name__)
 @dataclass
 class CreamConfig:
     """Central configuration for Cream application.
-    
+
     This dataclass manages all configuration settings including supported file formats,
     processing parameters, directory paths, and logging settings.
     """
-    
+
     # Directory settings
     home_dir: Path = field(default_factory=Path.home)
     config_dir: Path = field(init=False)
     model_dir: Path = field(init=False)
-    
+
     # File format settings
-    audio_formats: list[str] = field(default_factory=lambda: [
-        ".wav", ".flac", ".mp3", ".ogg", ".opus", 
-        ".m4a", ".aiff", ".ac3", ".wma"
-    ])
-    text_formats: list[str] = field(default_factory=lambda: [
-        ".txt", ".csv", ".srt", ".vtt", ".json"
-    ])
-    
+    audio_formats: list[str] = field(
+        default_factory=lambda: [
+            ".wav",
+            ".flac",
+            ".mp3",
+            ".ogg",
+            ".opus",
+            ".m4a",
+            ".aiff",
+            ".ac3",
+            ".wma",
+        ]
+    )
+    text_formats: list[str] = field(
+        default_factory=lambda: [".txt", ".csv", ".srt", ".vtt", ".json"]
+    )
+
     # Processing settings
     max_workers: int = 1
     enable_progress_bars: bool = True
-    
+
     # Logging settings
     log_level: str = "INFO"
     log_file: str | None = None
-    
+
     def __post_init__(self):
         """Initialize derived paths and validate configuration after initialization."""
         self.config_dir = self.home_dir / ".cream"
@@ -63,9 +72,11 @@ class CreamConfig:
     def validate_config(self) -> None:
         """Validate configuration settings."""
         if self.max_workers < 1:
-            logger.warning(f"max_workers must be >= 1, got {self.max_workers}. Setting to 1.")
+            logger.warning(
+                f"max_workers must be >= 1, got {self.max_workers}. Setting to 1."
+            )
             self.max_workers = 1
-            
+
         if self.log_file and not Path(self.log_file).parent.exists():
             logger.warning(f"Log file parent directory does not exist: {self.log_file}")
 
@@ -99,7 +110,9 @@ class CreamConfig:
         """
         return path.suffix.lower() in self.text_formats
 
-    def set_parallel_config(self, num_workers: int | None = None, enable_progress_bars: bool | None = None) -> None:
+    def set_parallel_config(
+        self, num_workers: int | None = None, enable_progress_bars: bool | None = None
+    ) -> None:
         """Set parallel processing configuration.
 
         Args:
@@ -109,14 +122,14 @@ class CreamConfig:
         if num_workers is not None:
             self.max_workers = max(1, num_workers)
             logger.debug(f"Updated max_workers: {self.max_workers}")
-        
+
         if enable_progress_bars is not None:
             self.enable_progress_bars = enable_progress_bars
             logger.debug(f"Updated enable_progress_bars: {self.enable_progress_bars}")
 
     def update_from_cli_args(self, **kwargs) -> None:
         """Update configuration from command line arguments.
-        
+
         Args:
             **kwargs: Configuration values to update.
         """

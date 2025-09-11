@@ -24,7 +24,6 @@ class FileSampler:
         """
         self.processor = ParallelProcessor(
             num_workers=num_workers or config.max_workers,
-            show_progress=True,  # Always show progress as per CLAUDE.md
         )
 
         if seed is not None:

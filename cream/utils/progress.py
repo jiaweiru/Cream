@@ -11,6 +11,7 @@ from rich.console import Console
 import sys
 
 from cream.core.logging import get_logger
+from cream.core.config import config
 
 logger = get_logger(__name__)
 
@@ -40,6 +41,24 @@ def create_progress(worker_id: int | None = None) -> Progress:
         description = f"[bold blue]Worker {worker_id}: {{task.description}}"
     else:
         description = "[bold blue]{task.description}"
+
+    # Allow disabling via global config
+    if not getattr(config, "enable_progress_bars", True):
+
+        class _DummyProgress:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def add_task(self, *_args, **_kwargs):
+                return 0
+
+            def update(self, *_args, **_kwargs):
+                return None
+
+        return _DummyProgress()  # type: ignore[return-value]
 
     # Create console that only outputs to terminal (not log files)
     console = Console(file=sys.stderr, force_terminal=True)

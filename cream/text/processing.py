@@ -5,6 +5,9 @@ from pathlib import Path
 from cream.core.processor import register_processor
 from cream.text.text_processor import BaseTextProcessor
 from cream.core.exceptions import TextProcessingError
+from cream.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 # Text Normalization Processor Example
@@ -22,7 +25,7 @@ class BasicTextNormalizer(BaseTextProcessor):
         error_msg = (
             "Basic text normalizer not implemented - add your normalization logic here"
         )
-        self.logger.error(error_msg)
+        logger.error(error_msg)
         raise TextProcessingError(error_msg)
 
 
@@ -39,5 +42,5 @@ class TextTranslator(BaseTextProcessor):
 
         # Template implementation - replace with actual translation logic
         error_msg = "Text translator not implemented - add your translation logic here"
-        self.logger.error(error_msg)
+        logger.error(error_msg)
         raise TextProcessingError(error_msg)

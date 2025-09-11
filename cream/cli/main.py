@@ -20,6 +20,7 @@ from pathlib import Path
 from rich.console import Console
 from cream.cli import audio, text, utils
 from cream.core.logging import setup, logger
+from cream.core.config import config
 
 console = Console()
 
@@ -49,6 +50,12 @@ def main(
     no_color: bool = typer.Option(
         False, "--no-color", help="Disable colored console output"
     ),
+    workers: int = typer.Option(
+        1, "--workers", "-w", help="Default max workers for batch processing"
+    ),
+    no_progress: bool = typer.Option(
+        False, "--no-progress", help="Disable progress bars"
+    ),
 ):
     """Cream: Simple and convenient audio data analysis and processing toolkit.
 
@@ -71,6 +78,15 @@ def main(
     )
 
     logger.debug(f"Starting cream CLI with log level: {log_level}")
+
+    # Apply global config from CLI
+    try:
+        config.set_parallel_config(
+            num_workers=workers, enable_progress_bars=not no_progress
+        )
+    except Exception:
+        # Config is defensive; ignore failures silently here
+        pass
 
     if version:
         from cream import __version__

@@ -24,33 +24,9 @@ class BaseProcessor(ABC):
     and processing algorithms in a consistent way.
     """
 
-    def __init__(
-        self, processor_config: dict[str, str | int | float | bool] | None = None
-    ):
-        """Initialize the processor.
-
-        Args:
-            processor_config: Configuration dictionary for the processor.
-        """
-        self.config = processor_config or {}
-        self.logger = get_logger(self.__class__.__name__)
-
-    def set_config(self, config: dict[str, str | int | float | bool] | None = None, **kwargs) -> None:
-        """Update the processor's configuration.
-
-        You can pass a dict via ``config`` and/or key‑value pairs as kwargs.
-        Keys with value None are ignored.
-
-        Example:
-            proc.set_config({"model_path": "~/models/m.bin"}, device="cuda")
-        """
-        if config:
-            for k, v in config.items():
-                if v is not None:
-                    self.config[k] = v
-        for k, v in kwargs.items():
-            if v is not None:
-                self.config[k] = v
+    def __init__(self) -> None:
+        """Initialize the processor (no stored configuration or logger)."""
+        pass
 
     @abstractmethod
     def process_single(
@@ -128,64 +104,20 @@ class BaseProcessor(ABC):
 
 
 class ModelBackedProcessor(BaseProcessor):
-    """Base class for processors that load a model once and reuse it.
+    """Base class for processors that manage a loaded model.
 
-    Uses a simple in‑process cache keyed by absolute ``model_path``. If
-    ``model_path`` is missing, falls back to the class name as the key.
+    Loads the model on construction. No global cache is maintained.
     """
 
-    _model_cache: dict[str, object] = {}
-
-    def __init__(
-        self, processor_config: dict[str, str | int | float | bool] | None = None
-    ):
-        super().__init__(processor_config)
-        key = self._resolve_model_key()
-
-        model = self._model_cache.get(key)
-        if model is None:
-            self.logger.info(f"Loading model for key: {key}")
-            model = self.load_model()
-            self._model_cache[key] = model
-
-        self._model_key = key
-        self.model = model
+    def __init__(self) -> None:
+        super().__init__()
+        # Load the model during initialization
+        self.model = self.load_model()
 
     @abstractmethod
     def load_model(self):
         """Load and return the model instance (subclasses implement)."""
         raise NotImplementedError
-
-    def set_config(self, config: dict[str, str | int | float | bool] | None = None, **kwargs) -> None:
-        """Update config and rebind model if ``model_path`` changes."""
-        super().set_config(config, **kwargs)
-        key = self._resolve_model_key()
-
-        if key != getattr(self, "_model_key", None):
-            model = self._model_cache.get(key)
-            if model is None:
-                self.logger.info(f"Loading model for key: {key}")
-                model = self.load_model()
-                self._model_cache[key] = model
-            self._model_key = key
-            self.model = model
-
-    def _resolve_model_key(self):
-        """Build a clear, unified cache key.
-
-        Prefer absolute model path; otherwise fall back to class name.
-        Format examples:
-        - model_path=/abs/path/to/model.bin
-        - model_class=MyProcessor
-        """
-        mpath = self.config.get("model_path")
-        if mpath:
-            try:
-                abs_path = Path(str(mpath)).expanduser().resolve()
-                return f"model_path={abs_path}"
-            except Exception:
-                pass
-        return f"model_class={self.__class__.__name__}"
 
 
 class ProcessorRegistry:
@@ -234,7 +166,7 @@ class ProcessorRegistry:
 
         Args:
             name: Name of the processor.
-            config: Configuration for the processor.
+            config: (Ignored) configuration for the processor.
 
         Returns:
             Processor instance.
@@ -248,11 +180,39 @@ class ProcessorRegistry:
             logger.error(error_msg)
             raise ValidationError(error_msg)
 
-        return self._processors[name](config)
+        return self._processors[name]()
 
     def list_processors(self) -> list[str]:
         """Get list of registered processors."""
         return list(self._processors.keys())
+
+    def list_processors_by_base(self, base_class: type[BaseProcessor]) -> list[str]:
+        """List registered processor names that subclass a given base.
+
+        This helps CLIs filter methods by domain (e.g., audio vs text).
+
+        Args:
+            base_class: Base class to filter by.
+
+        Returns:
+            List of processor names whose classes inherit from base_class.
+        """
+        results: list[str] = []
+        for name, cls in self._processors.items():
+            try:
+                if issubclass(cls, base_class):
+                    results.append(name)
+            except Exception:
+                # Be defensive if a non-class somehow got registered
+                continue
+        return results
+
+    def get_processor_classes(self) -> dict[str, type[BaseProcessor]]:
+        """Expose a copy of the registry mapping name -> class.
+
+        Intended for read-only introspection (e.g., advanced CLIs/tests).
+        """
+        return dict(self._processors)
 
 
 # Global registry instance
