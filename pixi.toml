@@ -1,8 +1,8 @@
 [workspace]
-authors = ["jwru <jiawei.ru@qq.com>"]
+authors = ["Jiawei Ru <jiawei.ru@qq.com>"]
 channels = ["conda-forge"]
 name = "Cream"
-platforms = ["linux-64"]
+platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
 
 [tasks]
