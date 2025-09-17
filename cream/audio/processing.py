@@ -56,10 +56,11 @@ class AudioNormalizer(BaseAudioProcessor):
         if target_level is not None:
             cmd += ["-t", target_level]
         try:
-            subprocess.run(cmd, capture_output=True, text=True, check=True)
-
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         except subprocess.CalledProcessError as e:
-            logger.error(f"Command failed: {e}\nstdout: {e.stdout}\nstderr: {e.stderr}")
+            logger.error(
+                f"Command failed: {e}\nstdout: {result.stdout}\nstderr: {result.stderr}"
+            )
             raise AudioProcessingError from e
         return output_path or input_path
 
