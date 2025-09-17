@@ -114,7 +114,13 @@ class ClearVoiceProcessor(ModelBackedProcessor):
         return output_path or input_path
 
 
-@register_processor("audio_denoiser_frcrn16k")
-class Denoiser_FRCRN_16k(ClearVoiceProcessor):
+@register_processor("audio_denoiser_mossformergan_16k")
+class Denoiser_MossFormerGAN_16k(ClearVoiceProcessor):
     task = "speech_enhancement"
-    model = "FRCRN_SE_16K"
+    model = "MossFormerGAN_SE_16K"
+
+
+@register_processor("audio_denoiser_mossformer2_48k")
+class Denoiser_MossFormer2_48k(ClearVoiceProcessor):
+    task = "speech_enhancement"
+    model = "MossFormer2_SE_48K"
