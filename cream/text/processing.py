@@ -7,7 +7,7 @@ from cream.text.text_processor import BaseTextProcessor
 from cream.core.exceptions import TextProcessingError
 from cream.core.logging import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 # Text Normalization Processor Example

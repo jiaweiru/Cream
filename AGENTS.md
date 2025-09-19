@@ -14,7 +14,7 @@ These guidelines apply to the entire repository.
   - Generic: `cream.core.processor.BaseProcessor` or `ModelBackedProcessor`
 - Validation: reuse `BaseProcessor.validate_input` and domain-specific validation in base classes.
 - Parallelism: use `cream.core.parallel.ParallelProcessor` and `config.max_workers`.
-- Logging: use `cream.core.logging.get_logger(__name__)` and avoid printing directly.
+- Logging: use `cream.core.logging.get_logger()` and avoid printing directly.
 - Progress: use `cream.utils.progress.create_progress` and honor `config.enable_progress_bars`.
 - CLI: Typer apps live under `cream/cli`. Keep commands thin; delegate to processors.
 - Configuration: read from `cream.core.config.config`; update via CLI flags only.

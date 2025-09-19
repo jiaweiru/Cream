@@ -9,7 +9,7 @@ from cream.utils.progress import (
     log_progress_complete,
 )
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class ParallelProcessor:

@@ -13,7 +13,7 @@ import sys
 from cream.core.logging import get_logger
 from cream.core.config import config
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 def create_progress(worker_id: int | None = None) -> Progress:

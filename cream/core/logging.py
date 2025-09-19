@@ -11,7 +11,7 @@ Example:
 
     With module context:
     >>> from cream.core.logging import get_logger
-    >>> logger = get_logger(__name__)
+    >>> logger = get_logger()
     >>> logger.debug("Debug message")
 
     Setup logging:
@@ -99,13 +99,7 @@ def setup(
         )
 
 
-def get_logger(name: str | None = None):
-    """Get logger bound to a specific name.
+def get_logger():
+    """Return the shared project logger."""
 
-    Args:
-        name: Logger name (typically __name__)
-
-    Returns:
-        Logger instance bound to the name
-    """
-    return logger.bind(name=name) if name else logger
+    return logger

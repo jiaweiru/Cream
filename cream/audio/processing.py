@@ -12,7 +12,7 @@ from cream.core.exceptions import AudioProcessingError
 from cream.core.logging import get_logger
 from cream.core.config import config
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 @register_processor("audio_resampler")

@@ -13,7 +13,7 @@ from cream.core.exceptions import ValidationError
 from cream.core.logging import get_logger
 from cream.core.parallel import ParallelProcessor
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class BaseProcessor(ABC):

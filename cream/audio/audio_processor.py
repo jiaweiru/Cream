@@ -10,7 +10,7 @@ from cream.core.config import config
 from . import processing  # noqa: F401
 from . import analysis  # noqa: F401
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class BaseAudioProcessor(BaseProcessor):

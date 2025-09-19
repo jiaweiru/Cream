@@ -8,7 +8,7 @@ from cream.core.config import config
 from cream.core.exceptions import AudioProcessingError, ValidationError
 from cream.core.logging import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class IndexMatcher:
