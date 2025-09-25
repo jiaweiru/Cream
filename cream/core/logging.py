@@ -1,0 +1,105 @@
+"""Simple logging module using loguru.
+
+This module provides a simplified logging interface using loguru with minimal configuration.
+Follows the project's simple approach while maintaining loguru's core benefits.
+
+Example:
+    Basic usage:
+    >>> from cream.core.logging import logger
+    >>> logger.info("Application started")
+    >>> logger.error("Something went wrong")
+
+    With module context:
+    >>> from cream.core.logging import get_logger
+    >>> logger = get_logger()
+    >>> logger.debug("Debug message")
+
+    Setup logging:
+    >>> from cream.core.logging import setup
+    >>> setup(level="DEBUG", file="app.log")
+"""
+
+import sys
+from pathlib import Path
+from loguru import logger
+
+# Remove default handler to have full control
+logger.remove()
+
+# Add default console handler
+logger.add(
+    sys.stderr,
+    level="INFO",
+    format=(
+        "<green>{time:HH:mm:ss}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    ),
+    colorize=True,
+    backtrace=True,
+    diagnose=True,
+)
+
+
+def setup(
+    level: str = "INFO", file: str | Path | None = None, colorize: bool | None = None
+):
+    """Setup logging configuration.
+
+    Args:
+        level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        file: Optional log file path
+        colorize: Enable colors (auto-detects if None)
+    """
+    # Remove all existing handlers
+    logger.remove()
+
+    # Auto-detect colorize setting
+    if colorize is None:
+        colorize = sys.stderr.isatty()
+
+    # Console format
+    format_str = (
+        (
+            "<green>{time:HH:mm:ss}</green> | "
+            "<level>{level: <8}</level> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+            "<level>{message}</level>"
+        )
+        if colorize
+        else ("{time:HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}")
+    )
+
+    # Console handler
+    logger.add(
+        sys.stderr,
+        level=level,
+        format=format_str,
+        colorize=colorize,
+        backtrace=True,
+        diagnose=True,
+    )
+
+    # File handler if requested
+    if file:
+        file_path = Path(file)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.add(
+            str(file_path),
+            level=level,
+            format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+            rotation="10 MB",
+            retention="7 days",
+            compression="zip",
+            backtrace=True,
+            diagnose=True,
+            enqueue=True,
+        )
+
+
+def get_logger():
+    """Return the shared project logger."""
+
+    return logger

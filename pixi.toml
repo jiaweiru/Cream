@@ -1,0 +1,28 @@
+[workspace]
+authors = ["Jiawei Ru <jiawei.ru@qq.com>"]
+channels = ["conda-forge"]
+name = "Cream"
+platforms = ["osx-arm64", "linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.13.7,<3.14"
+ffmpeg = ">=8.0.0,<9"
+ruby = ">=3.4.5,<4"
+compilers = ">=1.11.0,<2"
+pynini = ">=2.1.7,<3"
+
+[pypi-dependencies]
+soundfile = ">=0.12.1, <0.13"
+librosa = ">=0.10.2.post1, <0.11"
+loguru = ">=0.7.3, <0.8"
+typer = ">=0.17.4, <0.18"
+ffmpeg-normalize = ">=1.33.1, <2"
+clearvoice = ">=0.1.2, <0.2"
+mutagen = ">=1.47.0, <2"
+funasr = ">=1.2.7, <2"
+wetextprocessing = ">=0.1.10, <0.2"
+standard-aifc = ">=3.13.0, <4"
+standard-sunau = ">=3.13.0, <4"
